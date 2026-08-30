@@ -9,10 +9,10 @@ default: &default
 development:
   primary:
     <<: *default
-    database: vue_rails_development
+    database: kasir_development
   queue:
     <<: *default
-    database: vue_rails_development_queue
+    database: kasir_development_queue
     migrations_paths: db/queue_migrate
 
 # Warning: The database defined as "test" will be erased and
@@ -21,27 +21,27 @@ development:
 test:
   primary:
     <<: *default
-    database: vue_rails_test
+    database: kasir_test
   queue:
     <<: *default
-    database: vue_rails_test_queue
+    database: kasir_test_queue
     migrations_paths: db/queue_migrate
 
 production:
   primary: &primary_production
     <<: *default
-    database: vue_rails_production
-    username: vue_rails
-    password: <%= ENV["VUE_RAILS_DATABASE_PASSWORD"] %>
+    database: kasir_production
+    username: kasir
+    password: <%= ENV["KASIR_DATABASE_PASSWORD"] %>
   cache:
     <<: *primary_production
-    database: vue_rails_production_cache
+    database: kasir_production_cache
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: vue_rails_production_queue
+    database: kasir_production_queue
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: vue_rails_production_cable
+    database: kasir_production_cable
     migrations_paths: db/cable_migrate

@@ -4,6 +4,8 @@
 #
 Role.find_or_create_by!(key: "admin") { |role| role.assign_attributes(name: "Administrator", description: "Akses penuh ke seluruh admin panel.", system: true) }
 Role.find_or_create_by!(key: "member") { |role| role.assign_attributes(name: "Member", description: "Role bawaan untuk pengguna yang melakukan registrasi.", system: true) }
+Role.find_or_create_by!(key: "manager") { |role| role.assign_attributes(name: "Manager", description: "Mengawasi katalog, stok, dan operasional kasir.", system: true) }
+Role.find_or_create_by!(key: "cashier") { |role| role.assign_attributes(name: "Kasir", description: "Menjalankan shift dan transaksi kasir.", system: true) }
 
 permissions = {
   "dashboard.view" => [ "Dashboard", "Melihat dashboard admin." ],
@@ -24,7 +26,30 @@ permissions = {
   "jobs.update" => [ "Kelola job gagal", "Mencoba ulang atau menghapus job gagal." ],
   "api_docs.view" => [ "Lihat dokumentasi API", "Membuka dokumentasi OpenAPI interaktif." ],
   "security_approvals.view" => [ "Lihat persetujuan keamanan", "Melihat perubahan admin yang menunggu persetujuan." ],
-  "security_approvals.update" => [ "Setujui perubahan keamanan", "Menyetujui perubahan sensitif yang diajukan administrator lain." ]
+  "security_approvals.update" => [ "Setujui perubahan keamanan", "Menyetujui perubahan sensitif yang diajukan administrator lain." ],
+  "categories.view" => [ "Lihat kategori", "Melihat daftar dan detail kategori produk." ],
+  "categories.create" => [ "Buat kategori", "Membuat kategori produk." ],
+  "categories.update" => [ "Ubah kategori", "Mengubah kategori produk." ],
+  "categories.delete" => [ "Hapus kategori", "Menghapus kategori yang tidak digunakan produk." ],
+  "products.view" => [ "Lihat produk", "Melihat daftar dan detail produk." ],
+  "products.create" => [ "Buat produk", "Membuat produk baru." ],
+  "products.update" => [ "Ubah produk", "Mengubah informasi produk." ],
+  "products.delete" => [ "Hapus produk", "Menghapus produk." ],
+  "inventory.view" => [ "Lihat persediaan", "Melihat stok produk." ],
+  "stock_adjustments.create" => [ "Sesuaikan stok", "Membuat penyesuaian stok." ],
+  "stock_movements.view" => [ "Lihat pergerakan stok", "Melihat jurnal stok." ],
+  "cashier_shifts.view_own" => [ "Lihat shift sendiri", "Melihat shift kasir sendiri." ],
+  "cashier_shifts.manage_own" => [ "Kelola shift sendiri", "Membuka dan menutup shift sendiri." ],
+  "cashier_shifts.view_all" => [ "Lihat semua shift", "Melihat riwayat seluruh kasir." ],
+  "sales.create" => [ "Buat transaksi", "Melakukan transaksi kasir." ],
+  "sales.view_own" => [ "Lihat transaksi sendiri", "Melihat transaksi kasir sendiri." ],
+  "sales.view_all" => [ "Lihat semua transaksi", "Melihat seluruh riwayat transaksi." ],
+  "sales.refund_create" => [ "Ajukan retur", "Mengajukan retur atau pembatalan transaksi." ],
+  "sales.refund_review" => [ "Tinjau retur", "Menyetujui atau menolak retur dan pembatalan transaksi." ],
+  "reports.view" => [ "Lihat laporan", "Melihat dan mengekspor laporan penjualan dan laba." ],
+  "suppliers.view" => [ "Lihat supplier", "Melihat data supplier." ], "suppliers.create" => [ "Buat supplier", "Menambah supplier." ], "suppliers.update" => [ "Ubah supplier", "Mengubah data supplier." ], "suppliers.delete" => [ "Hapus supplier", "Menghapus supplier yang belum digunakan." ],
+  "purchases.view" => [ "Lihat pembelian", "Melihat pesanan pembelian." ], "purchases.create" => [ "Buat pembelian", "Membuat pesanan pembelian." ], "purchases.update" => [ "Kelola pembelian", "Mengubah, menerima, dan membatalkan pembelian." ],
+  "store_settings.manage" => [ "Kelola pengaturan toko", "Mengatur profil, pajak, printer, dan struk toko." ]
 }
 permissions.each do |key, (name, description)|
   Permission.find_or_initialize_by(key: key).tap do |permission|
@@ -35,9 +60,11 @@ Permission.where(key: "roles.manage").destroy_all
 Role.find_by!(key: "admin").permissions = Permission.all
 self_service_permissions = Permission.where(key: %w[sessions.view sessions.delete account_security.view account_security.update profile.view profile.update])
 Role.where.not(key: "admin").find_each { |role| role.permissions |= self_service_permissions }
+Role.find_by!(key: "manager").permissions |= Permission.where(key: %w[dashboard.view categories.view products.view inventory.view stock_movements.view cashier_shifts.view_own cashier_shifts.manage_own cashier_shifts.view_all sales.view_own sales.view_all sales.refund_create sales.refund_review reports.view suppliers.view suppliers.create suppliers.update suppliers.delete purchases.view purchases.create purchases.update store_settings.manage])
+Role.find_by!(key: "cashier").permissions |= Permission.where(key: %w[dashboard.view cashier_shifts.view_own cashier_shifts.manage_own sales.create sales.view_own sales.refund_create])
 
 if Rails.env.development?
-  admin = User.find_or_initialize_by(email_address: ENV.fetch("ADMIN_EMAIL", "admin@vue_rails.local"))
+  admin = User.find_or_initialize_by(email_address: ENV.fetch("ADMIN_EMAIL", "admin@kasir.local"))
 
   if admin.new_record?
     admin.password = ENV.fetch("ADMIN_PASSWORD") do
@@ -50,4 +77,149 @@ if Rails.env.development?
   admin.save!
 
   puts "Development admin ready: #{admin.email_address}"
+
+  demo_password = ENV["DEMO_USER_PASSWORD"]
+  %w[manager@kasir.local cashier1@kasir.local cashier2@kasir.local].each do |email|
+    user = User.find_or_initialize_by(email_address: email)
+    if user.new_record?
+      raise "Set DEMO_USER_PASSWORD when creating development users" if demo_password.blank?
+      user.password = demo_password
+    end
+    user.role = email.start_with?("manager") ? "manager" : "cashier"
+    user.email_verified_at ||= Time.current
+    user.save!
+  end
+
+  unless CashierShift.exists?(shift_number: "SFT-DEMO-001")
+    cashier = User.find_by!(email_address: "cashier1@kasir.local")
+    shift = CashierShift.create!(user: cashier, shift_number: "SFT-DEMO-001", status: "closed", opened_at: 1.day.ago.change(hour: 8), closed_at: 1.day.ago.change(hour: 16), opening_cash: 200_000, expected_cash: 200_000, actual_cash: 200_000, cash_difference: 0, opening_note: "Shift contoh", closing_note: "Kas sesuai")
+    CashMovement.create!(cashier_shift: shift, user: cashier, movement_type: "opening", amount: 200_000, note: "Saldo awal shift contoh")
+    CashMovement.create!(cashier_shift: shift, user: cashier, movement_type: "closing", amount: 200_000, note: "Penutupan shift contoh")
+  end
+
+  catalog = {
+    "Makanan" => [
+      { name: "Nasi Goreng", sku: "MKN-001", barcode: "899700100001", cost_price: 12_000, selling_price: 20_000, minimum_stock: 5, unit: "porsi" },
+      { name: "Roti Cokelat", sku: "MKN-002", barcode: "899700100002", cost_price: 5_000, selling_price: 9_000, minimum_stock: 10, unit: "pcs" },
+      { name: "Mi Instan", sku: "MKN-003", barcode: "899700100003", cost_price: 3_000, selling_price: 5_000, minimum_stock: 12, unit: "pcs" }
+    ],
+    "Minuman" => [
+      { name: "Kopi Susu", sku: "MNM-001", barcode: "899700200001", cost_price: 8_000, selling_price: 15_000, minimum_stock: 8, unit: "cup" },
+      { name: "Teh Manis", sku: "MNM-002", barcode: "899700200002", cost_price: 3_000, selling_price: 7_000, minimum_stock: 8, unit: "cup" },
+      { name: "Air Mineral 600 ml", sku: "MNM-003", barcode: "899700200003", cost_price: 2_500, selling_price: 4_000, minimum_stock: 24, unit: "botol" }
+    ],
+    "Kebutuhan Harian" => [
+      { name: "Gula Pasir 1 kg", sku: "KHR-001", barcode: "899700300001", cost_price: 15_000, selling_price: 18_000, minimum_stock: 6, unit: "pcs" },
+      { name: "Tisu Wajah", sku: "KHR-002", barcode: "899700300002", cost_price: 9_000, selling_price: 13_000, minimum_stock: 6, unit: "box" }
+    ]
+  }
+
+  catalog.each do |category_name, products|
+    category = Category.find_or_create_by!(name: category_name) do |record|
+      record.description = "Data contoh kategori #{category_name.downcase}."
+      record.active = true
+    end
+    products.each do |attributes|
+      Product.find_or_create_by!(sku: attributes.fetch(:sku)) do |product|
+        product.assign_attributes(attributes.merge(category: category, active: true))
+      end
+    end
+  end
+
+  initial_stocks = { "MKN-001" => 20, "MKN-002" => 35, "MKN-003" => 50, "MNM-001" => 25, "MNM-002" => 30, "MNM-003" => 60, "KHR-001" => 10, "KHR-002" => 4 }
+  initial_stocks.each do |sku, quantity|
+    product = Product.find_by!(sku: sku)
+    next if product.stock_movements.exists?(movement_type: "initial")
+    product.update!(current_stock: quantity)
+    StockMovement.create!(product: product, user: admin, movement_type: "initial", quantity: quantity, stock_before: 0, stock_after: quantity, note: "Stok awal data development")
+  end
+
+  # Dashboard demo data. The fixed marker keeps this block idempotent.
+  unless Sale.exists?(client_token: "DEMO-DASHBOARD-001")
+    cashier_one = User.find_by!(email_address: "cashier1@kasir.local")
+    cashier_two = User.find_by!(email_address: "cashier2@kasir.local")
+    cashier_one.update!(first_name: "Ayu", last_name: "Lestari")
+    cashier_two.update!(first_name: "Made", last_name: "Pratama")
+
+    products = Product.where(sku: %w[MKN-001 MKN-002 MKN-003 MNM-001 MNM-002 MNM-003 KHR-001 KHR-002]).index_by(&:sku)
+    payment_methods = %w[cash qris cash debit_card transfer qris cash]
+    sale_patterns = [
+      [[ "MNM-003", 2 ], [ "MKN-002", 1 ]],
+      [[ "MKN-003", 3 ], [ "MNM-003", 1 ]],
+      [[ "MNM-001", 2 ], [ "MKN-002", 2 ]],
+      [[ "MKN-001", 1 ], [ "MNM-002", 2 ]],
+      [[ "KHR-001", 1 ], [ "KHR-002", 1 ], [ "MNM-003", 2 ]],
+      [[ "MKN-002", 3 ], [ "MNM-001", 1 ]],
+      [[ "MKN-003", 4 ], [ "MNM-002", 1 ]]
+    ]
+
+    7.times do |day_index|
+      date = Date.current - (6 - day_index).days
+      cashier = day_index.even? ? cashier_one : cashier_two
+      shift = CashierShift.create!(
+        user: cashier,
+        shift_number: "SFT-DASH-#{day_index + 1}",
+        status: "closed",
+        opened_at: date.in_time_zone.change(hour: 8),
+        closed_at: date.in_time_zone.change(hour: 17),
+        opening_cash: 300_000,
+        expected_cash: 300_000,
+        actual_cash: 300_000,
+        cash_difference: 0,
+        opening_note: "Shift data demo dashboard",
+        closing_note: "Shift selesai dan kas sesuai"
+      )
+
+      (3 + day_index).times do |sale_index|
+        pattern = sale_patterns[(day_index + sale_index) % sale_patterns.length]
+        completed_at = date.in_time_zone.change(hour: 9 + (sale_index % 8), min: (sale_index * 11) % 60)
+        items = pattern.map do |sku, quantity|
+          product = products.fetch(sku)
+          { product: product, quantity: quantity, subtotal: product.selling_price * quantity }
+        end
+        subtotal = items.sum { |item| item.fetch(:subtotal) }
+        discount = sale_index % 5 == 4 ? 2_000 : 0
+        total = subtotal - discount
+        number = "SALE-DEMO-#{day_index + 1}-#{format('%02d', sale_index + 1)}"
+        token = day_index.zero? && sale_index.zero? ? "DEMO-DASHBOARD-001" : "DEMO-DASHBOARD-#{day_index + 1}-#{sale_index + 1}"
+
+        sale = Sale.create!(
+          cashier_shift: shift,
+          user: cashier,
+          sale_number: number,
+          client_token: token,
+          status: "completed",
+          subtotal: subtotal,
+          discount: discount,
+          tax_amount: (total * 11.0 / 111).round,
+          rounding_amount: 0,
+          total: total,
+          completed_at: completed_at,
+          notes: "Transaksi contoh dashboard"
+        )
+        items.each do |item|
+          product = item.fetch(:product)
+          SaleItem.create!(sale: sale, product: product, product_name: product.name, sku: product.sku, quantity: item.fetch(:quantity), unit_price: product.selling_price, cost_price: product.cost_price, subtotal: item.fetch(:subtotal))
+        end
+        method = payment_methods[(day_index + sale_index) % payment_methods.length]
+        received = method == "cash" ? ((total + 9_999) / 10_000) * 10_000 : total
+        Payment.create!(sale: sale, payment_method: method, amount: total, received_amount: received, change_amount: received - total, reference_number: method == "cash" ? nil : "REF#{number.delete('-')}")
+      end
+    end
+
+    CashierShift.create!(
+      user: cashier_one,
+      shift_number: "SFT-DEMO-AKTIF",
+      status: "open",
+      opened_at: Time.current.change(hour: 8, min: 0),
+      opening_cash: 300_000,
+      opening_note: "Shift aktif untuk tampilan dashboard"
+    )
+
+    demo_stock = { "MKN-001" => 18, "MKN-002" => 7, "MKN-003" => 42, "MNM-001" => 6, "MNM-002" => 0, "MNM-003" => 55, "KHR-001" => 4, "KHR-002" => 0 }
+    demo_stock.each { |sku, quantity| products.fetch(sku).update!(current_stock: quantity) }
+  end
+
+  puts "Development catalog ready: #{Category.count} categories, #{Product.count} products"
+  puts "Development dashboard ready: #{Sale.count} sales, #{CashierShift.open.count} active shifts"
 end

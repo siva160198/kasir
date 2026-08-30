@@ -6,6 +6,9 @@ Rails.application.routes.draw do
       get "status", to: "status#show"
       get "readiness", to: "readiness#show"
       get "csrf", to: "csrf#show"
+      resource :store_profile, only: :show do
+        get :logo
+      end
       post "csp_reports", to: "csp_reports#create"
       resource :password_reset, only: %i[show create update]
       resource :registration, only: :create
@@ -43,6 +46,38 @@ Rails.application.routes.draw do
         get "dashboard", to: "dashboard#show"
         resources :users, only: %i[index show update]
         resources :roles, only: %i[index show create update destroy]
+        resources :categories, only: %i[index show create update destroy]
+        resources :products, only: %i[index show create update destroy]
+        resources :inventory, only: :index do
+          get :alerts, on: :collection
+          post :create_drafts, on: :collection
+          patch :preferred_supplier, on: :member
+        end
+        resources :stock_movements, only: %i[index create] do
+          get :adjustment, on: :member, action: :show
+        end
+        resources :cashier_shifts, only: %i[index create] do
+          get :current, on: :collection
+          patch :close, on: :member
+          post :cash_movement, on: :member
+        end
+        resources :sales, only: %i[index show create] do
+          get :catalog, on: :collection
+          resources :refunds, only: :create, controller: "sale_refunds"
+        end
+        resources :sale_refunds, only: [] do
+          patch :approve, on: :member
+          patch :reject, on: :member
+        end
+        resource :report, only: :show do
+          get :export
+        end
+        resources :suppliers, only: %i[index show create update destroy]
+        resources :purchase_orders, only: %i[index show create update] do
+          post :receive, on: :member
+          patch :cancel, on: :member
+        end
+        resource :store_setting, only: %i[show update]
         resources :audit_logs, only: :index
         resources :approvals, only: %i[index update]
         resources :jobs, only: %i[index destroy] do

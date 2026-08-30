@@ -3,10 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   Bell,
-  BookOpen,
-  BriefcaseBusiness,
   ChevronDown,
-  ClipboardCheck,
   Compass,
   LayoutDashboard,
   LogOut,
@@ -14,7 +11,18 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
-  ScrollText,
+  Package,
+  Tags,
+  Boxes,
+  History,
+  SlidersHorizontal,
+  Clock3,
+  ShoppingCart,
+  ReceiptText,
+  BarChart3,
+  ClipboardList,
+  Truck,
+  Settings,
   Search,
   ShieldCheck,
   Sun,
@@ -28,6 +36,7 @@ import { useClickOutside } from "../../composables/useClickOutside";
 import { t } from "../../services/i18n";
 import { toast } from "../../services/toast";
 import { useAuth } from "../../services/auth";
+import { apiFetch } from "../../services/api";
 
 const route = useRoute();
 const router = useRouter();
@@ -39,12 +48,19 @@ const desktopSidebarOpen = ref(true);
 const profileOpen = ref(false);
 const profileMenu = ref(null);
 const notificationOpen = ref(false);
+const stockAlerts = ref({ count: 0, alerts: [] });
 const notificationMenu = ref(null);
 const dark = ref(false);
 const userManagementOpen = ref(
   route.path.startsWith("/admin/users") ||
     route.path.startsWith("/admin/roles"),
 );
+const catalogOpen = ref(
+  route.path.startsWith("/admin/categories") || route.path.startsWith("/admin/products"),
+);
+const stockOpen = ref(route.path.startsWith("/admin/inventory") || route.path.startsWith("/admin/stock-"));
+const shiftsOpen = ref(route.path.includes("shift"));
+const salesOpen = ref(route.path === "/admin/pos" || route.path === "/admin/sales");
 
 useClickOutside(profileMenu, () => { profileOpen.value = false; });
 useClickOutside(notificationMenu, () => { notificationOpen.value = false; });
@@ -56,33 +72,43 @@ const navigation = computed(() => [
     to: "/admin",
     permission: "dashboard.view",
   },
+  { key: "shifts", label: t("nav.shifts"), icon: Clock3, children: [
+    { label: t("nav.my_shift"), icon: Clock3, to: "/admin/my-shift", permission: "cashier_shifts.view_own" },
+    { label: t("nav.shift_history"), icon: History, to: "/admin/shift-history", permission: "cashier_shifts.view_own" },
+  ] },
+  { key: "sales", label: t("nav.transactions"), icon: ShoppingCart, children: [
+    { label: t("nav.pos"), icon: ShoppingCart, to: "/admin/pos", permission: "sales.create" },
+    { label: t("nav.sales_history"), icon: ReceiptText, to: "/admin/sales", permission: "sales.view_own" },
+  ] },
   {
-    label: t("nav.user_management"),
-    icon: Users,
+    key: "catalog",
+    label: t("nav.catalog"),
+    icon: Package,
     children: [
-      {
-        label: t("nav.users"),
-        icon: Users,
-        to: "/admin/users",
-        permission: "users.view",
-      },
-      {
-        label: t("nav.roles"),
-        icon: ShieldCheck,
-        to: "/admin/roles",
-        permission: "roles.view",
-      },
+      { label: t("nav.categories"), icon: Tags, to: "/admin/categories", permission: "categories.view" },
+      { label: t("nav.products"), icon: Package, to: "/admin/products", permission: "products.view" },
     ],
   },
   {
-    label: t("nav.audit_logs"),
-    icon: ScrollText,
-    to: "/admin/audit-logs",
-    permission: "audit_logs.view",
+    key: "stock", label: t("nav.stock"), icon: Boxes, children: [
+      { label: t("nav.inventory"), icon: Boxes, to: "/admin/inventory", permission: "inventory.view" },
+      { label: t("nav.stock_adjustments"), icon: SlidersHorizontal, to: "/admin/stock-adjustments", permission: "stock_adjustments.create" },
+      { label: t("nav.stock_movements"), icon: History, to: "/admin/stock-movements", permission: "stock_movements.view" },
+    ],
   },
-  { label: t("nav.jobs"), icon: BriefcaseBusiness, to: "/admin/jobs", permission: "jobs.view" },
-  { label: t("nav.api_docs"), icon: BookOpen, to: "/admin/api-docs", permission: "api_docs.view" },
-  { label: t("nav.security_approvals"), icon: ClipboardCheck, to: "/admin/security-approvals", permission: "security_approvals.view" },
+  { label: t("nav.purchases"), icon: ClipboardList, to: "/admin/purchases", permission: "purchases.view" },
+  { label: t("nav.suppliers"), icon: Truck, to: "/admin/suppliers", permission: "suppliers.view" },
+  { label: t("nav.reports"), icon: BarChart3, to: "/admin/reports", permission: "reports.view" },
+  {
+    key: "users",
+    label: t("nav.user_management"),
+    icon: Users,
+    children: [
+      { label: t("nav.users"), icon: Users, to: "/admin/users", permission: "users.view" },
+      { label: t("nav.roles"), icon: ShieldCheck, to: "/admin/roles", permission: "roles.view" },
+    ],
+  },
+  { label: t("nav.store_settings"), icon: Settings, to: "/admin/store-settings", permission: "store_settings.manage" },
 ]);
 
 const visibleNavigation = computed(() =>
@@ -98,31 +124,41 @@ const visibleNavigation = computed(() =>
 );
 
 onMounted(() => {
-  dark.value = localStorage.getItem("vue_rails-theme") === "dark";
+  dark.value = localStorage.getItem("kasir-theme") === "dark";
   desktopSidebarOpen.value =
-    localStorage.getItem("vue_rails-sidebar") !== "closed";
+    localStorage.getItem("kasir-sidebar") !== "closed";
   document.documentElement.classList.toggle("dark", dark.value);
+  if (permissions.value.includes("inventory.view")) apiFetch("/api/v1/admin/inventory/alerts").then((value) => { stockAlerts.value = value; }).catch(() => {});
 });
 
 function toggleTheme() {
   dark.value = !dark.value;
   document.documentElement.classList.toggle("dark", dark.value);
-  localStorage.setItem("vue_rails-theme", dark.value ? "dark" : "light");
+  localStorage.setItem("kasir-theme", dark.value ? "dark" : "light");
 }
 
 function toggleDesktopSidebar() {
   desktopSidebarOpen.value = !desktopSidebarOpen.value;
   localStorage.setItem(
-    "vue_rails-sidebar",
+    "kasir-sidebar",
     desktopSidebarOpen.value ? "open" : "closed",
   );
 }
 
-function toggleUserManagement() {
+function groupOpen(item) {
+  if (item.key === "catalog") return catalogOpen.value;
+  if (item.key === "stock") return stockOpen.value;
+  if (item.key === "shifts") return shiftsOpen.value;
+  if (item.key === "sales") return salesOpen.value;
+  return userManagementOpen.value;
+}
+
+function toggleGroup(item) {
   const wasCollapsed = !desktopSidebarOpen.value;
   if (wasCollapsed) desktopSidebarOpen.value = true;
-  userManagementOpen.value = wasCollapsed ? true : !userManagementOpen.value;
-  localStorage.setItem("vue_rails-sidebar", "open");
+  const target = item.key === "catalog" ? catalogOpen : item.key === "stock" ? stockOpen : item.key === "shifts" ? shiftsOpen : item.key === "sales" ? salesOpen : userManagementOpen;
+  target.value = wasCollapsed ? true : !target.value;
+  localStorage.setItem("kasir-sidebar", "open");
 }
 
 async function signOut() {
@@ -162,7 +198,7 @@ async function signOut() {
           /></span>
           <span :class="desktopSidebarOpen ? '' : 'lg:hidden'"
             ><strong class="block text-xl text-gray-900 dark:text-white"
-              >Vue Rails</strong
+              >Kasir</strong
             ><small class="text-gray-400">{{ t("admin.console") }}</small></span
           >
         </RouterLink>
@@ -208,15 +244,15 @@ async function signOut() {
                   desktopSidebarOpen ? '' : 'lg:justify-center',
                 ]"
                 class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
-                :aria-expanded="userManagementOpen"
-                @click="toggleUserManagement"
+                :aria-expanded="groupOpen(item)"
+                @click="toggleGroup(item)"
               >
                 <component :is="item.icon" :size="20" /><span
                   :class="desktopSidebarOpen ? '' : 'lg:hidden'"
                   >{{ item.label }}</span
                 ><ChevronDown
                   :class="[
-                    userManagementOpen ? 'rotate-180' : '',
+                    groupOpen(item) ? 'rotate-180' : '',
                     desktopSidebarOpen ? '' : 'lg:hidden',
                   ]"
                   :size="16"
@@ -224,7 +260,7 @@ async function signOut() {
                 />
               </button>
               <ul
-                v-show="userManagementOpen"
+                v-show="groupOpen(item)"
                 :class="desktopSidebarOpen ? '' : 'lg:hidden'"
                 class="ml-5 mt-2 space-y-1 border-l border-gray-200 pl-4 dark:border-gray-700"
               >
@@ -254,7 +290,7 @@ async function signOut() {
       >
         <div :class="desktopSidebarOpen ? '' : 'lg:hidden'">
           <p class="text-sm font-semibold text-gray-900 dark:text-white">
-            Vue Rails API
+            Kasir API
           </p>
           <div class="mt-2 flex items-center gap-2 text-xs text-gray-500">
             <span class="h-2 w-2 rounded-full bg-brand-500"></span
@@ -325,11 +361,11 @@ async function signOut() {
           </button>
           <div ref="notificationMenu" class="relative">
             <button :aria-label="t('admin.notifications')" :aria-expanded="notificationOpen" class="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-800" @click="notificationOpen = !notificationOpen">
-              <Bell :size="19" /><span class="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-error-700 dark:border-gray-900"></span>
+              <Bell :size="19" /><span v-if="stockAlerts.count" class="absolute -right-1 -top-1 min-w-5 rounded-full bg-error-600 px-1 text-center text-[10px] font-bold leading-5 text-white">{{stockAlerts.count>99?'99+':stockAlerts.count}}</span>
             </button>
             <div v-if="notificationOpen" class="absolute right-0 z-50 mt-3 w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white p-4 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900">
               <div class="border-b border-gray-100 pb-3 dark:border-gray-800"><h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t("admin.notifications") }}</h2></div>
-              <div class="py-8 text-center"><Bell :size="24" class="mx-auto text-gray-400" /><p class="mt-3 text-sm text-gray-500">{{ t("admin.no_notifications") }}</p></div>
+              <div v-if="stockAlerts.alerts.length" class="divide-y"><RouterLink v-for="alert in stockAlerts.alerts" :key="alert.id" to="/admin/inventory" class="block py-3 text-sm" @click="notificationOpen=false"><strong>{{alert.name}}</strong><p class="text-xs text-gray-500">{{t('stock.alert_line',{stock:alert.current_stock,count:alert.recommended_quantity})}}</p></RouterLink><RouterLink to="/admin/inventory" class="mt-2 block text-center text-sm font-semibold text-brand-600" @click="notificationOpen=false">{{t('stock.view_recommendations')}}</RouterLink></div><div v-else class="py-8 text-center"><Bell :size="24" class="mx-auto text-gray-400" /><p class="mt-3 text-sm text-gray-500">{{ t("admin.no_notifications") }}</p></div>
             </div>
           </div>
           <LanguageSwitcher />

@@ -73,3 +73,32 @@ security_approvals_view:
 security_approvals_update:
   key: security_approvals.update
   name: Setujui perubahan keamanan
+
+categories_view: { key: categories.view, name: Lihat kategori }
+categories_create: { key: categories.create, name: Buat kategori }
+categories_update: { key: categories.update, name: Ubah kategori }
+categories_delete: { key: categories.delete, name: Hapus kategori }
+products_view: { key: products.view, name: Lihat produk }
+products_create: { key: products.create, name: Buat produk }
+products_update: { key: products.update, name: Ubah produk }
+products_delete: { key: products.delete, name: Hapus produk }
+inventory_view: { key: inventory.view, name: Lihat persediaan }
+stock_adjustments_create: { key: stock_adjustments.create, name: Sesuaikan stok }
+stock_movements_view: { key: stock_movements.view, name: Lihat pergerakan stok }
+cashier_shifts_view_own: { key: cashier_shifts.view_own, name: Lihat shift sendiri }
+cashier_shifts_manage_own: { key: cashier_shifts.manage_own, name: Kelola shift sendiri }
+cashier_shifts_view_all: { key: cashier_shifts.view_all, name: Lihat semua shift }
+sales_create: { key: sales.create, name: Buat transaksi }
+sales_view_own: { key: sales.view_own, name: Lihat transaksi sendiri }
+sales_view_all: { key: sales.view_all, name: Lihat semua transaksi }
+sales_refund_create: { key: sales.refund_create, name: Ajukan retur }
+sales_refund_review: { key: sales.refund_review, name: Tinjau retur }
+reports_view: { key: reports.view, name: Lihat laporan }
+suppliers_view: { key: suppliers.view, name: Lihat supplier }
+suppliers_create: { key: suppliers.create, name: Buat supplier }
+suppliers_update: { key: suppliers.update, name: Ubah supplier }
+suppliers_delete: { key: suppliers.delete, name: Hapus supplier }
+purchases_view: { key: purchases.view, name: Lihat pembelian }
+purchases_create: { key: purchases.create, name: Buat pembelian }
+purchases_update: { key: purchases.update, name: Kelola pembelian }
+store_settings_manage: { key: store_settings.manage, name: Kelola pengaturan toko }

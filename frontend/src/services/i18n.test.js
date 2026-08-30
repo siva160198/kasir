@@ -12,5 +12,8 @@ describe('native i18n', () => {
     expect(document.documentElement.lang).toBe('en')
     expect(navigationLoading.value).toBe(true)
     expect(t('auth.otp_sent', { email: 'a***@mail.com' })).toContain('a***@mail.com')
+    expect(t('dashboard.sales_statistics')).toBe('Sales statistics')
+    expect(t('dashboard.active_shifts', { count: 2 })).toBe('2 active shifts')
+    expect(t('receipt.sample_product')).toBe('Sample Product')
   })
 })

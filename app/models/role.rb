@@ -1,5 +1,5 @@
 class Role < ApplicationRecord
-  SYSTEM_KEYS = %w[admin member].freeze
+  SYSTEM_KEYS = %w[admin member manager cashier].freeze
 
   has_many :users, foreign_key: :role, primary_key: :key, inverse_of: :role_record
   has_many :role_permissions, dependent: :destroy

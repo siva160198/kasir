@@ -13,6 +13,23 @@ module Api
           "roles.create" => "roles.view",
           "roles.update" => "roles.view",
           "roles.delete" => "roles.view",
+          "categories.create" => "categories.view",
+          "categories.update" => "categories.view",
+          "categories.delete" => "categories.view",
+          "products.create" => "products.view",
+          "products.update" => "products.view",
+          "products.delete" => "products.view",
+          "stock_adjustments.create" => "inventory.view",
+          "stock_movements.view" => "inventory.view",
+          "cashier_shifts.manage_own" => "cashier_shifts.view_own",
+          "sales.create" => "sales.view_own",
+          "sales.refund_create" => "sales.view_own",
+          "sales.refund_review" => "sales.view_all",
+          "suppliers.create" => "suppliers.view",
+          "suppliers.update" => "suppliers.view",
+          "suppliers.delete" => "suppliers.view",
+          "purchases.create" => "purchases.view",
+          "purchases.update" => "purchases.view",
           "security_approvals.update" => "security_approvals.view"
         }.freeze
 

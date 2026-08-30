@@ -7,7 +7,6 @@ import {
 } from "./services/navigationLoading";
 import { t } from "./services/i18n";
 
-const HomeView = () => import("./views/HomeView.vue");
 const LoginView = () => import("./views/LoginView.vue");
 const ForgotPasswordView = () => import("./views/ForgotPasswordView.vue");
 const ResetPasswordView = () => import("./views/ResetPasswordView.vue");
@@ -17,6 +16,19 @@ const AdminView = () => import("./views/AdminView.vue");
 const AdminUsersView = () => import("./views/AdminUsersView.vue");
 const AdminAuditLogsView = () => import("./views/AdminAuditLogsView.vue");
 const AdminRolesView = () => import("./views/AdminRolesView.vue");
+const AdminCategoriesView = () => import("./views/AdminCategoriesView.vue");
+const AdminProductsView = () => import("./views/AdminProductsView.vue");
+const AdminInventoryView = () => import("./views/AdminInventoryView.vue");
+const AdminStockAdjustmentsView = () => import("./views/AdminStockAdjustmentsView.vue");
+const AdminStockMovementsView = () => import("./views/AdminStockMovementsView.vue");
+const AdminMyShiftView = () => import("./views/AdminMyShiftView.vue");
+const AdminShiftHistoryView = () => import("./views/AdminShiftHistoryView.vue");
+const AdminPosView = () => import("./views/AdminPosView.vue");
+const AdminSalesView = () => import("./views/AdminSalesView.vue");
+const AdminReportsView = () => import("./views/AdminReportsView.vue");
+const AdminSuppliersView = () => import("./views/AdminSuppliersView.vue");
+const AdminPurchasesView = () => import("./views/AdminPurchasesView.vue");
+const AdminStoreSettingsView = () => import("./views/AdminStoreSettingsView.vue");
 const ProfileView = () => import("./views/ProfileView.vue");
 const AdminJobsView = () => import("./views/AdminJobsView.vue");
 const AdminApiDocsView = () => import("./views/AdminApiDocsView.vue");
@@ -29,7 +41,7 @@ const { loadUser, can } = useAuth();
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", component: HomeView },
+    { path: "/", redirect: "/login" },
     { path: "/login", component: LoginView },
     { path: "/forgot-password", component: ForgotPasswordView },
     { path: "/reset-password", component: ResetPasswordView },
@@ -52,6 +64,19 @@ const router = createRouter({
       component: AdminRolesView,
       meta: { permission: "roles.view", layout: "admin" },
     },
+    { path: "/admin/categories", component: AdminCategoriesView, meta: { permission: "categories.view", layout: "admin" } },
+    { path: "/admin/products", component: AdminProductsView, meta: { permission: "products.view", layout: "admin" } },
+    { path: "/admin/inventory", component: AdminInventoryView, meta: { permission: "inventory.view", layout: "admin" } },
+    { path: "/admin/stock-adjustments", component: AdminStockAdjustmentsView, meta: { permission: "stock_adjustments.create", layout: "admin" } },
+    { path: "/admin/stock-movements", component: AdminStockMovementsView, meta: { permission: "stock_movements.view", layout: "admin" } },
+    { path: "/admin/my-shift", component: AdminMyShiftView, meta: { permission: "cashier_shifts.view_own", layout: "admin" } },
+    { path: "/admin/shift-history", component: AdminShiftHistoryView, meta: { permission: "cashier_shifts.view_own", layout: "admin" } },
+    { path: "/admin/pos", component: AdminPosView, meta: { permission: "sales.create", layout: "admin" } },
+    { path: "/admin/sales", component: AdminSalesView, meta: { permission: "sales.view_own", layout: "admin" } },
+    { path: "/admin/reports", component: AdminReportsView, meta: { permission: "reports.view", layout: "admin" } },
+    { path: "/admin/suppliers", component: AdminSuppliersView, meta: { permission: "suppliers.view", layout: "admin" } },
+    { path: "/admin/purchases", component: AdminPurchasesView, meta: { permission: "purchases.view", layout: "admin" } },
+    { path: "/admin/store-settings", component: AdminStoreSettingsView, meta: { permission: "store_settings.manage", layout: "admin" } },
     {
       path: "/admin/audit-logs",
       component: AdminAuditLogsView,

@@ -1,4 +1,4 @@
-# Vue Rails Starter
+# Kasir Starter
 
 Reusable full-stack starter for applications that need a Rails JSON API,
 Vue frontend, PostgreSQL, authentication, authorization, and an admin panel.

@@ -20,8 +20,8 @@ const widthClass = computed(() => sizes[props.size] || sizes.lg);
 const dialogElement = ref(null);
 let previouslyFocusedElement = null;
 
-const modalStack = globalThis.__vue_railsModalStack || [];
-globalThis.__vue_railsModalStack = modalStack;
+const modalStack = globalThis.__kasirModalStack || [];
+globalThis.__kasirModalStack = modalStack;
 
 function isTopModal() {
   return modalStack.at(-1) === modalId;

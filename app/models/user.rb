@@ -1,4 +1,10 @@
 class User < ApplicationRecord
+  has_many :cashier_shifts, dependent: :restrict_with_error
+  has_many :sales, dependent: :restrict_with_error
+  has_many :purchase_orders, dependent: :restrict_with_error
+  has_many :goods_receipts, dependent: :restrict_with_error
+  has_many :requested_sale_refunds, class_name: "SaleRefund", foreign_key: :requested_by_id, dependent: :restrict_with_error
+  has_many :reviewed_sale_refunds, class_name: "SaleRefund", foreign_key: :reviewed_by_id, dependent: :restrict_with_error
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :login_challenges, dependent: :destroy
@@ -39,6 +45,10 @@ class User < ApplicationRecord
 
   def permission_keys
     role_record.permissions.order(:key).pluck(:key)
+  end
+
+  def full_name
+    [ first_name, last_name ].compact_blank.join(" ")
   end
 
   def email_verified?

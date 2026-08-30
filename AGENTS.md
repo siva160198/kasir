@@ -463,6 +463,8 @@ Rails and Vite development servers. Use `--skip-server` when appropriate.
   notification and theme buttons. In the admin header it belongs beside notifications.
 - The desktop sidebar collapses to an icon rail; it must never disappear completely.
   User and role pages stay grouped under the expandable User Management tree.
+- Preserve the established sidebar order. Add every new top-level menu group below all
+  existing groups; never insert a new business menu above Dashboard or User Management.
 - Use Lucide icons consistently. Prefer simple flat icons and avoid ornamental,
   AI-styled, emoji, or mismatched icon treatments.
 - User verification status uses check/X icons. In read-only tables, user active status

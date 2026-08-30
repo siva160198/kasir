@@ -5,7 +5,7 @@ import AppModal from "./AppModal.vue";
 
 afterEach(() => {
   document.body.innerHTML = "";
-  globalThis.__vue_railsModalStack = [];
+  globalThis.__kasirModalStack = [];
 });
 
 describe("AppModal", () => {

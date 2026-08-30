@@ -1,0 +1,9 @@
+food:
+  name: Makanan
+  description: Produk makanan
+  active: true
+
+drink:
+  name: Minuman
+  description: Produk minuman
+  active: true

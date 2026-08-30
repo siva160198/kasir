@@ -113,7 +113,7 @@ module Api
         Current.user.update!(pending_totp_secret: secret)
         render json: {
           secret: TotpAuthenticator.base32_secret(secret),
-          provisioning_uri: TotpAuthenticator.provisioning_uri(secret: secret, email: Current.user.email_address, issuer: ENV.fetch("APP_NAME", "Vue Rails"))
+          provisioning_uri: TotpAuthenticator.provisioning_uri(secret: secret, email: Current.user.email_address, issuer: ENV.fetch("APP_NAME", "Kasir"))
         }
       end
 

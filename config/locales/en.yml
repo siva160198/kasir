@@ -61,6 +61,7 @@ en:
       internal_server_error: "The server encountered a problem. Try again later."
       service_unavailable: "The service is not ready. Try again shortly."
       validation_failed: "The provided data is invalid."
+      shift_required: "Open a cashier shift before creating a sale."
       rate_limited: "Too many attempts. Try again later."
       registration_rate_limited: "Too many registrations. Try again later."
       role_rate_limited: "Too many role changes. Try again shortly."

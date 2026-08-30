@@ -55,6 +55,34 @@ admin_security_approvals_view:
 admin_security_approvals_update:
   role: admin
   permission: security_approvals_update
+admin_categories_view: { role: admin, permission: categories_view }
+admin_categories_create: { role: admin, permission: categories_create }
+admin_categories_update: { role: admin, permission: categories_update }
+admin_categories_delete: { role: admin, permission: categories_delete }
+admin_products_view: { role: admin, permission: products_view }
+admin_products_create: { role: admin, permission: products_create }
+admin_products_update: { role: admin, permission: products_update }
+admin_products_delete: { role: admin, permission: products_delete }
+admin_inventory_view: { role: admin, permission: inventory_view }
+admin_stock_adjustments_create: { role: admin, permission: stock_adjustments_create }
+admin_stock_movements_view: { role: admin, permission: stock_movements_view }
+admin_cashier_shifts_view_own: { role: admin, permission: cashier_shifts_view_own }
+admin_cashier_shifts_manage_own: { role: admin, permission: cashier_shifts_manage_own }
+admin_cashier_shifts_view_all: { role: admin, permission: cashier_shifts_view_all }
+admin_sales_create: { role: admin, permission: sales_create }
+admin_sales_view_own: { role: admin, permission: sales_view_own }
+admin_sales_view_all: { role: admin, permission: sales_view_all }
+admin_sales_refund_create: { role: admin, permission: sales_refund_create }
+admin_sales_refund_review: { role: admin, permission: sales_refund_review }
+admin_reports_view: { role: admin, permission: reports_view }
+admin_suppliers_view: { role: admin, permission: suppliers_view }
+admin_suppliers_create: { role: admin, permission: suppliers_create }
+admin_suppliers_update: { role: admin, permission: suppliers_update }
+admin_suppliers_delete: { role: admin, permission: suppliers_delete }
+admin_purchases_view: { role: admin, permission: purchases_view }
+admin_purchases_create: { role: admin, permission: purchases_create }
+admin_purchases_update: { role: admin, permission: purchases_update }
+admin_store_settings_manage: { role: admin, permission: store_settings_manage }
 member_sessions_view:
   role: member
   permission: sessions_view

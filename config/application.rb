@@ -15,7 +15,7 @@ require_relative "../lib/request_size_limiter"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-module VueRails
+module Kasir
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1

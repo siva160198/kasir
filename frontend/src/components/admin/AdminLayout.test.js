@@ -35,15 +35,51 @@ describe("AdminLayout", () => {
 
     expect(wrapper.get("aside").classes()).toContain("lg:w-[90px]");
     expect(wrapper.get('[aria-label="Lebarkan sidebar"]').exists()).toBe(true);
-    expect(localStorage.getItem("vue_rails-sidebar")).toBe("closed");
+    expect(localStorage.getItem("kasir-sidebar")).toBe("closed");
   });
 
   it("restores the collapsed sidebar preference", async () => {
-    localStorage.setItem("vue_rails-sidebar", "closed");
+    localStorage.setItem("kasir-sidebar", "closed");
     const wrapper = mountLayout();
     await nextTick();
 
     expect(wrapper.get("aside").classes()).toContain("lg:w-[90px]");
+  });
+
+  it("keeps operational and security tools out of the sidebar", () => {
+    useAuth().setUser({
+      email_address: "admin@example.com",
+      permissions: [
+        "dashboard.view",
+        "profile.view",
+        "audit_logs.view",
+        "jobs.view",
+        "api_docs.view",
+        "security_approvals.view",
+      ],
+    });
+
+    const sidebarText = mountLayout().get("aside").text();
+
+    expect(sidebarText).not.toContain("Log audit");
+    expect(sidebarText).not.toContain("Antrean job");
+    expect(sidebarText).not.toContain("Dokumentasi API");
+    expect(sidebarText).not.toContain("Persetujuan keamanan");
+  });
+
+  it("orders navigation by the store workflow", () => {
+    useAuth().setUser({
+      email_address: "admin@example.com",
+      permissions: ["dashboard.view", "users.view", "categories.view", "products.view", "inventory.view", "cashier_shifts.view_own", "sales.create", "sales.view_own"],
+    });
+
+    const sidebarText = mountLayout().get("aside").text();
+
+    expect(sidebarText.indexOf("Dasbor")).toBeLessThan(sidebarText.indexOf("Shift Kasir"));
+    expect(sidebarText.indexOf("Shift Kasir")).toBeLessThan(sidebarText.indexOf("Transaksi"));
+    expect(sidebarText.indexOf("Transaksi")).toBeLessThan(sidebarText.indexOf("Produk"));
+    expect(sidebarText.indexOf("Produk")).toBeLessThan(sidebarText.indexOf("Stok"));
+    expect(sidebarText.indexOf("Stok")).toBeLessThan(sidebarText.indexOf("Manajemen Pengguna"));
   });
 
   it("shows the profile link above sign out in the account dropdown", async () => {
