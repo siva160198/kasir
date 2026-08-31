@@ -30,4 +30,25 @@ class Api::V1::StepUpsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
     assert_api_error("CURRENT_PASSWORD_INVALID")
   end
+
+  test "issues POS OTP without requesting the password again" do
+    shift = CashierShift.create!(user: @user, shift_number: "SFT-POS-OTP", opened_at: Time.current, opening_cash: 0)
+    post api_v1_step_up_url, params: { purpose: "pos_access" }, as: :json
+    assert_response :accepted
+    challenge = @user.step_up_challenges.order(:id).last
+    assert_equal "pos_access", challenge.purpose
+    token = response.parsed_body.fetch("challenge_token")
+    code = ActionMailer::Base.deliveries.last.body.encoded[/\b\d{6}\b/]
+
+    post verify_api_v1_step_up_url, params: { purpose: "pos_access", challenge_token: token, code: code }, as: :json
+    assert_response :success
+    assert shift.reload.pos_verified_at
+    assert_includes @user.sessions.ids, shift.pos_verified_session_id
+  end
+
+  test "does not issue a POS OTP without an open shift" do
+    post api_v1_step_up_url, params: { purpose: "pos_access" }, as: :json
+    assert_response :unprocessable_content
+    assert_api_error("SHIFT_REQUIRED")
+  end
 end

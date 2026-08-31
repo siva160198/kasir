@@ -1,6 +1,9 @@
 class Sale < ApplicationRecord
+  attr_accessor :items, :payment_method, :received_amount, :promotion_code
   belongs_to :cashier_shift
   belongs_to :user
+  belongs_to :customer, optional: true
+  belongs_to :promotion, optional: true
   has_many :sale_items, dependent: :restrict_with_error
   has_many :payments, dependent: :restrict_with_error
   has_many :sale_refunds, dependent: :restrict_with_error

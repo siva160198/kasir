@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted, reactive, ref } from "vue";
-import { Save } from "@lucide/vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { Image, Save, Trash2, UploadCloud } from "@lucide/vue";
 import AdminLayout from "../components/admin/AdminLayout.vue";
 import AsyncButton from "../components/AsyncButton.vue";
 import FormField from "../components/FormField.vue";
@@ -13,7 +13,10 @@ import { toast } from "../services/toast";
 import { t } from "../services/i18n";
 const loading = ref(true),
   saving = ref(false),
-  logo = ref(null);
+  logo = ref(null),
+  logoInput = ref(null),
+  logoPreviewUrl = ref(""),
+  draggingLogo = ref(false);
 const form = reactive({
   store_name: "",
   address: "",
@@ -33,7 +36,42 @@ const form = reactive({
   printer_name: "",
   printer_copies: 1,
   logo_url: null,
+  remove_logo: false,
 });
+const displayedLogo = computed(() => logoPreviewUrl.value || form.logo_url);
+function clearObjectUrl() {
+  if (logoPreviewUrl.value) URL.revokeObjectURL(logoPreviewUrl.value);
+  logoPreviewUrl.value = "";
+}
+function selectLogo(file) {
+  if (!file) return;
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+    toast.error(t("store.logo_type_error"));
+    return;
+  }
+  if (file.size > 1024 * 1024) {
+    toast.error(t("store.logo_size_error"));
+    return;
+  }
+  clearObjectUrl();
+  logo.value = file;
+  logoPreviewUrl.value = URL.createObjectURL(file);
+  form.remove_logo = false;
+}
+function handleLogoInput(event) {
+  selectLogo(event.target.files?.[0]);
+  event.target.value = "";
+}
+function handleLogoDrop(event) {
+  draggingLogo.value = false;
+  selectLogo(event.dataTransfer?.files?.[0]);
+}
+function removeLogo() {
+  clearObjectUrl();
+  logo.value = null;
+  form.remove_logo = Boolean(form.logo_url);
+  form.logo_url = null;
+}
 async function load() {
   loading.value = true;
   try {
@@ -59,6 +97,8 @@ async function submit() {
     });
     Object.assign(form, r.store_setting);
     logo.value = null;
+    clearObjectUrl();
+    form.remove_logo = false;
     toast.success(t("store.saved"));
   } catch (e) {
     toast.error(e.message);
@@ -67,6 +107,7 @@ async function submit() {
   }
 }
 onMounted(load);
+onBeforeUnmount(clearObjectUrl);
 </script>
 <template>
   <AdminLayout
@@ -94,11 +135,83 @@ onMounted(load);
             </h2>
             <FormField :label="t('store.name')"
               ><TextInput v-model="form.store_name" required /></FormField
-            ><FormField :label="t('store.logo')"
-              ><input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                @change="logo = $event.target.files[0]" /></FormField
+            ><FormField :label="t('store.logo')" class="sm:col-span-2">
+              <div
+                class="flex flex-col gap-4 rounded-xl border border-dashed p-4 transition sm:flex-row sm:items-center"
+                :class="
+                  draggingLogo
+                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                    : 'border-gray-300 bg-gray-50/70 dark:border-gray-700 dark:bg-gray-800/40'
+                "
+                @dragenter.prevent="draggingLogo = true"
+                @dragover.prevent="draggingLogo = true"
+                @dragleave.prevent="draggingLogo = false"
+                @drop.prevent="handleLogoDrop"
+              >
+                <div
+                  class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <img
+                    v-if="displayedLogo"
+                    :src="displayedLogo"
+                    :alt="t('store.logo_preview')"
+                    class="h-full w-full object-contain p-2"
+                  />
+                  <Image v-else :size="30" class="text-gray-400" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="truncate text-sm font-semibold text-gray-800 dark:text-white"
+                  >
+                    {{
+                      logo?.name ||
+                      (displayedLogo
+                        ? t("store.current_logo")
+                        : t("store.no_logo"))
+                    }}
+                  </p>
+                  <p class="mt-1 text-xs leading-5 text-gray-500">
+                    {{ t("store.logo_hint") }}
+                    <span
+                      v-if="logo"
+                      class="font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      · {{ (logo.size / 1024).toFixed(1) }} KB
+                    </span>
+                  </p>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+                      @click="logoInput?.click()"
+                    >
+                      <UploadCloud :size="16" />
+                      {{
+                        t(
+                          displayedLogo
+                            ? "store.change_logo"
+                            : "store.choose_logo",
+                        )
+                      }}
+                    </button>
+                    <button
+                      v-if="displayedLogo"
+                      type="button"
+                      class="inline-flex items-center gap-2 rounded-lg border border-error-200 px-3 py-2 text-sm font-semibold text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:hover:bg-error-500/10"
+                      @click="removeLogo"
+                    >
+                      <Trash2 :size="16" />{{ t("store.remove_logo") }}
+                    </button>
+                  </div>
+                </div>
+                <input
+                  ref="logoInput"
+                  type="file"
+                  class="sr-only"
+                  accept="image/png,image/jpeg,image/webp"
+                  @change="handleLogoInput"
+                />
+              </div> </FormField
             ><FormField :label="t('supplier.phone')"
               ><TextInput v-model="form.phone" /></FormField
             ><FormField :label="t('common.email')"
@@ -177,8 +290,8 @@ onMounted(load);
             class="mx-auto max-w-full bg-white p-3 font-mono text-xs text-black shadow"
           >
             <img
-              v-if="form.logo_url"
-              :src="form.logo_url"
+              v-if="displayedLogo"
+              :src="displayedLogo"
               class="mx-auto mb-2 max-h-14"
             />
             <h3 class="text-center text-lg font-bold">
@@ -191,14 +304,17 @@ onMounted(load);
             </p>
             <hr class="my-2" />
             <div class="flex justify-between">
-              <span>{{ t("receipt.sample_product") }} × 2</span><span>Rp20.000</span>
+              <span>{{ t("receipt.sample_product") }} × 2</span
+              ><span>Rp20.000</span>
             </div>
             <hr class="my-2" />
             <div v-if="form.show_tax" class="flex justify-between">
-              <span>{{ t("receipt.tax") }} {{ form.tax_rate }}%</span><span>Rp0</span>
+              <span>{{ t("receipt.tax") }} {{ form.tax_rate }}%</span
+              ><span>Rp0</span>
             </div>
             <div class="flex justify-between font-bold">
-              <span>{{ t("receipt.total") }}</span><span>Rp20.000</span>
+              <span>{{ t("receipt.total") }}</span
+              ><span>Rp20.000</span>
             </div>
             <p v-if="form.show_cashier">{{ t("receipt.cashier") }}: admin</p>
             <p class="mt-3 text-center">{{ form.receipt_footer }}</p>

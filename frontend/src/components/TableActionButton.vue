@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from "vue";
-import { Pencil, Save, Trash2 } from "@lucide/vue";
+import { Eye, Pencil, Save, Trash2 } from "@lucide/vue";
 import AsyncButton from "./AsyncButton.vue";
 
 const props = defineProps({
@@ -11,7 +11,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
 });
-const icons = { edit: Pencil, save: Save, delete: Trash2 };
+const icons = { view: Eye, edit: Pencil, save: Save, delete: Trash2 };
 const icon = computed(() => icons[props.action] || Pencil);
 const danger = computed(() => props.action === "delete");
 </script>

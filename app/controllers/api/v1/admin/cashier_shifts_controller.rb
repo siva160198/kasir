@@ -58,7 +58,7 @@ module Api::V1::Admin
       def movement_json(movement) = movement.as_json(only: %i[id movement_type amount category note created_at]).merge(user_email: movement.user.email_address)
       def shift_json(s)
         summary = cash_summary(s)
-        s.as_json(only: %i[id shift_number status opened_at closed_at opening_cash expected_cash actual_cash cash_difference opening_note closing_note]).merge(user_email: s.user.email_address, transaction_count: s.sales.count, cash_sales: summary[:cash_sales], non_cash_sales: s.sales.joins(:payments).where.not(payments: { payment_method: "cash" }).sum(:total), refunds: summary[:cash_refunds], cash_summary: summary, cash_movements: s.cash_movements.where(movement_type: %w[cash_in cash_out]).includes(:user).order(created_at: :desc).map { |movement| movement_json(movement) })
+        s.as_json(only: %i[id shift_number status opened_at closed_at opening_cash expected_cash actual_cash cash_difference opening_note closing_note]).merge(pos_access_verified: s.pos_verified_for?(Current.session), user_email: s.user.email_address, transaction_count: s.sales.count, cash_sales: summary[:cash_sales], non_cash_sales: s.sales.joins(:payments).where.not(payments: { payment_method: "cash" }).sum(:total), refunds: summary[:cash_refunds], cash_summary: summary, cash_movements: s.cash_movements.where(movement_type: %w[cash_in cash_out]).includes(:user).order(created_at: :desc).map { |movement| movement_json(movement) })
       end
   end
 end

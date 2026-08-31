@@ -5,7 +5,7 @@ class Api::V1::Admin::ReportsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:one))
     product = products(:coffee)
     product.update!(current_stock: 10)
-    CashierShift.create!(user: users(:one), shift_number: "SFT-REPORT", opened_at: Time.current, opening_cash: 50_000)
+    CashierShift.create!(user: users(:one), shift_number: "SFT-REPORT", opened_at: Time.current, opening_cash: 50_000, pos_verified_at: Time.current, pos_verified_session_id: users(:one).sessions.order(:id).last.id)
     post api_v1_admin_sales_url, params: { client_token: SecureRandom.uuid, received_amount: 50_000, items: [ { product_id: product.id, quantity: 2 } ] }, as: :json
   end
 

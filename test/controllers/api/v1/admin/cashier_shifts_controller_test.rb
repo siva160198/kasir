@@ -11,6 +11,11 @@ class Api::V1::Admin::CashierShiftsControllerTest < ActionDispatch::IntegrationT
     get current_api_v1_admin_cashier_shifts_url
     assert_response :success
     assert_equal shift.id, response.parsed_body.dig("cashier_shift", "id")
+    assert_equal false, response.parsed_body.dig("cashier_shift", "pos_access_verified")
+
+    shift.update!(pos_verified_at: Time.current, pos_verified_session_id: Session.order(:id).last.id)
+    get current_api_v1_admin_cashier_shifts_url
+    assert_equal true, response.parsed_body.dig("cashier_shift", "pos_access_verified")
   end
 
   test "opens and closes a shift" do

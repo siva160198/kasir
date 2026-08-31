@@ -1,5 +1,5 @@
 class StockMovement < ApplicationRecord
-  TYPES = %w[initial adjustment_in adjustment_out damaged lost internal_use sale refund purchase].freeze
+  TYPES = %w[initial adjustment_in adjustment_out damaged lost internal_use sale refund purchase stock_opname].freeze
   belongs_to :product
   belongs_to :user
   validates :movement_type, inclusion: { in: TYPES }

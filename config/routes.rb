@@ -77,6 +77,13 @@ Rails.application.routes.draw do
           post :receive, on: :member
           patch :cancel, on: :member
         end
+        resources :expenses, only: %i[index show create update destroy]
+        resources :stock_counts, only: %i[index show create] do
+          patch "items/:item_id", action: :update_item, on: :member
+          patch :finalize, on: :member
+        end
+        resources :customers, only: %i[index show create update destroy]
+        resources :promotions, only: %i[index show create update destroy]
         resource :store_setting, only: %i[show update]
         resources :audit_logs, only: :index
         resources :approvals, only: %i[index update]

@@ -40,6 +40,7 @@ module Api::V1::Admin
         returned_cost = refund_items.sum("sale_refund_items.quantity * sale_items.cost_price")
         net_sales = gross_sales - refund_total
         profit = net_sales - (gross_cost - returned_cost)
+        expenses = Expense.where(expense_date: from..to).sum(:amount)
         sales_by_day = sales.group_by { |sale| sale.completed_at.to_date }
         refunds_by_day = refunds.group_by { |refund| refund.reviewed_at.to_date }
 
@@ -56,7 +57,7 @@ module Api::V1::Admin
 
         {
           period: { from: from.iso8601, to: to.iso8601 },
-          summary: { gross_sales: gross_sales, refunds: refund_total, net_sales: net_sales, cost: gross_cost - returned_cost, gross_profit: profit, transactions: sales.count, average_transaction: sales.count.zero? ? 0 : net_sales / sales.count },
+          summary: { gross_sales: gross_sales, refunds: refund_total, net_sales: net_sales, cost: gross_cost - returned_cost, gross_profit: profit, expenses: expenses, net_profit: profit - expenses, transactions: sales.count, average_transaction: sales.count.zero? ? 0 : net_sales / sales.count },
           daily: (from..to).map { |date| { date: date.iso8601, net_sales: sales_by_day.fetch(date, []).sum(&:total) - refunds_by_day.fetch(date, []).sum(&:total), transactions: sales_by_day.fetch(date, []).size } },
           products: product_rows.values.sort_by { |row| [ -row[:quantity], -row[:profit] ] }.first(10),
           payments: Payment::METHODS.index_with { |method| payment_totals.fetch(method, 0) },

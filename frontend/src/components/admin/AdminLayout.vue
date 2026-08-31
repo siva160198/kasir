@@ -23,6 +23,10 @@ import {
   ClipboardList,
   Truck,
   Settings,
+  WalletCards,
+  ClipboardCheck,
+  ContactRound,
+  BadgePercent,
   Search,
   ShieldCheck,
   Sun,
@@ -41,8 +45,18 @@ import { apiFetch } from "../../services/api";
 const route = useRoute();
 const router = useRouter();
 const { user, permissions, logout, logoutLoading } = useAuth();
-const profileInitial = computed(() => user.value?.first_name?.charAt(0).toUpperCase() || user.value?.email_address?.charAt(0).toUpperCase() || "U");
-const accountName = computed(() => [user.value?.first_name, user.value?.last_name].filter(Boolean).join(" ") || user.value?.email_address?.split("@")[0] || t("profile.menu"));
+const profileInitial = computed(
+  () =>
+    user.value?.first_name?.charAt(0).toUpperCase() ||
+    user.value?.email_address?.charAt(0).toUpperCase() ||
+    "U",
+);
+const accountName = computed(
+  () =>
+    [user.value?.first_name, user.value?.last_name].filter(Boolean).join(" ") ||
+    user.value?.email_address?.split("@")[0] ||
+    t("profile.menu"),
+);
 const sidebarOpen = ref(false);
 const desktopSidebarOpen = ref(true);
 const profileOpen = ref(false);
@@ -56,14 +70,24 @@ const userManagementOpen = ref(
     route.path.startsWith("/admin/roles"),
 );
 const catalogOpen = ref(
-  route.path.startsWith("/admin/categories") || route.path.startsWith("/admin/products"),
+  route.path.startsWith("/admin/categories") ||
+    route.path.startsWith("/admin/products"),
 );
-const stockOpen = ref(route.path.startsWith("/admin/inventory") || route.path.startsWith("/admin/stock-"));
+const stockOpen = ref(
+  route.path.startsWith("/admin/inventory") ||
+    route.path.startsWith("/admin/stock-"),
+);
 const shiftsOpen = ref(route.path.includes("shift"));
-const salesOpen = ref(route.path === "/admin/pos" || route.path === "/admin/sales");
+const salesOpen = ref(
+  route.path === "/admin/pos" || route.path === "/admin/sales",
+);
 
-useClickOutside(profileMenu, () => { profileOpen.value = false; });
-useClickOutside(notificationMenu, () => { notificationOpen.value = false; });
+useClickOutside(profileMenu, () => {
+  profileOpen.value = false;
+});
+useClickOutside(notificationMenu, () => {
+  notificationOpen.value = false;
+});
 
 const navigation = computed(() => [
   {
@@ -72,43 +96,155 @@ const navigation = computed(() => [
     to: "/admin",
     permission: "dashboard.view",
   },
-  { key: "shifts", label: t("nav.shifts"), icon: Clock3, children: [
-    { label: t("nav.my_shift"), icon: Clock3, to: "/admin/my-shift", permission: "cashier_shifts.view_own" },
-    { label: t("nav.shift_history"), icon: History, to: "/admin/shift-history", permission: "cashier_shifts.view_own" },
-  ] },
-  { key: "sales", label: t("nav.transactions"), icon: ShoppingCart, children: [
-    { label: t("nav.pos"), icon: ShoppingCart, to: "/admin/pos", permission: "sales.create" },
-    { label: t("nav.sales_history"), icon: ReceiptText, to: "/admin/sales", permission: "sales.view_own" },
-  ] },
+  {
+    key: "shifts",
+    label: t("nav.shifts"),
+    icon: Clock3,
+    children: [
+      {
+        label: t("nav.my_shift"),
+        icon: Clock3,
+        to: "/admin/my-shift",
+        permission: "cashier_shifts.view_own",
+      },
+      {
+        label: t("nav.shift_history"),
+        icon: History,
+        to: "/admin/shift-history",
+        permission: "cashier_shifts.view_own",
+      },
+    ],
+  },
+  {
+    key: "sales",
+    label: t("nav.transactions"),
+    icon: ShoppingCart,
+    children: [
+      {
+        label: t("nav.pos"),
+        icon: ShoppingCart,
+        to: "/admin/pos",
+        permission: "sales.create",
+      },
+      {
+        label: t("nav.sales_history"),
+        icon: ReceiptText,
+        to: "/admin/sales",
+        permission: "sales.view_own",
+      },
+    ],
+  },
   {
     key: "catalog",
     label: t("nav.catalog"),
     icon: Package,
     children: [
-      { label: t("nav.categories"), icon: Tags, to: "/admin/categories", permission: "categories.view" },
-      { label: t("nav.products"), icon: Package, to: "/admin/products", permission: "products.view" },
+      {
+        label: t("nav.categories"),
+        icon: Tags,
+        to: "/admin/categories",
+        permission: "categories.view",
+      },
+      {
+        label: t("nav.products"),
+        icon: Package,
+        to: "/admin/products",
+        permission: "products.view",
+      },
     ],
   },
   {
-    key: "stock", label: t("nav.stock"), icon: Boxes, children: [
-      { label: t("nav.inventory"), icon: Boxes, to: "/admin/inventory", permission: "inventory.view" },
-      { label: t("nav.stock_adjustments"), icon: SlidersHorizontal, to: "/admin/stock-adjustments", permission: "stock_adjustments.create" },
-      { label: t("nav.stock_movements"), icon: History, to: "/admin/stock-movements", permission: "stock_movements.view" },
+    key: "stock",
+    label: t("nav.stock"),
+    icon: Boxes,
+    children: [
+      {
+        label: t("nav.inventory"),
+        icon: Boxes,
+        to: "/admin/inventory",
+        permission: "inventory.view",
+      },
+      {
+        label: t("nav.stock_counts"),
+        icon: ClipboardCheck,
+        to: "/admin/stock-counts",
+        permission: "stock_counts.view",
+      },
+      {
+        label: t("nav.stock_adjustments"),
+        icon: SlidersHorizontal,
+        to: "/admin/stock-adjustments",
+        permission: "stock_adjustments.create",
+      },
+      {
+        label: t("nav.stock_movements"),
+        icon: History,
+        to: "/admin/stock-movements",
+        permission: "stock_movements.view",
+      },
     ],
   },
-  { label: t("nav.purchases"), icon: ClipboardList, to: "/admin/purchases", permission: "purchases.view" },
-  { label: t("nav.suppliers"), icon: Truck, to: "/admin/suppliers", permission: "suppliers.view" },
-  { label: t("nav.reports"), icon: BarChart3, to: "/admin/reports", permission: "reports.view" },
+  {
+    label: t("nav.purchases"),
+    icon: ClipboardList,
+    to: "/admin/purchases",
+    permission: "purchases.view",
+  },
+  {
+    label: t("nav.suppliers"),
+    icon: Truck,
+    to: "/admin/suppliers",
+    permission: "suppliers.view",
+  },
+  {
+    label: t("nav.customers"),
+    icon: ContactRound,
+    to: "/admin/customers",
+    permission: "customers.view",
+  },
+  {
+    label: t("nav.promotions"),
+    icon: BadgePercent,
+    to: "/admin/promotions",
+    permission: "promotions.view",
+  },
+  {
+    label: t("nav.expenses"),
+    icon: WalletCards,
+    to: "/admin/expenses",
+    permission: "expenses.view",
+  },
+  {
+    label: t("nav.reports"),
+    icon: BarChart3,
+    to: "/admin/reports",
+    permission: "reports.view",
+  },
   {
     key: "users",
     label: t("nav.user_management"),
     icon: Users,
     children: [
-      { label: t("nav.users"), icon: Users, to: "/admin/users", permission: "users.view" },
-      { label: t("nav.roles"), icon: ShieldCheck, to: "/admin/roles", permission: "roles.view" },
+      {
+        label: t("nav.users"),
+        icon: Users,
+        to: "/admin/users",
+        permission: "users.view",
+      },
+      {
+        label: t("nav.roles"),
+        icon: ShieldCheck,
+        to: "/admin/roles",
+        permission: "roles.view",
+      },
     ],
   },
-  { label: t("nav.store_settings"), icon: Settings, to: "/admin/store-settings", permission: "store_settings.manage" },
+  {
+    label: t("nav.store_settings"),
+    icon: Settings,
+    to: "/admin/store-settings",
+    permission: "store_settings.manage",
+  },
 ]);
 
 const visibleNavigation = computed(() =>
@@ -125,10 +261,14 @@ const visibleNavigation = computed(() =>
 
 onMounted(() => {
   dark.value = localStorage.getItem("kasir-theme") === "dark";
-  desktopSidebarOpen.value =
-    localStorage.getItem("kasir-sidebar") !== "closed";
+  desktopSidebarOpen.value = localStorage.getItem("kasir-sidebar") !== "closed";
   document.documentElement.classList.toggle("dark", dark.value);
-  if (permissions.value.includes("inventory.view")) apiFetch("/api/v1/admin/inventory/alerts").then((value) => { stockAlerts.value = value; }).catch(() => {});
+  if (permissions.value.includes("inventory.view"))
+    apiFetch("/api/v1/admin/inventory/alerts")
+      .then((value) => {
+        stockAlerts.value = value;
+      })
+      .catch(() => {});
 });
 
 function toggleTheme() {
@@ -156,7 +296,16 @@ function groupOpen(item) {
 function toggleGroup(item) {
   const wasCollapsed = !desktopSidebarOpen.value;
   if (wasCollapsed) desktopSidebarOpen.value = true;
-  const target = item.key === "catalog" ? catalogOpen : item.key === "stock" ? stockOpen : item.key === "shifts" ? shiftsOpen : item.key === "sales" ? salesOpen : userManagementOpen;
+  const target =
+    item.key === "catalog"
+      ? catalogOpen
+      : item.key === "stock"
+        ? stockOpen
+        : item.key === "shifts"
+          ? shiftsOpen
+          : item.key === "sales"
+            ? salesOpen
+            : userManagementOpen;
   target.value = wasCollapsed ? true : !target.value;
   localStorage.setItem("kasir-sidebar", "open");
 }
@@ -360,12 +509,56 @@ async function signOut() {
             <Sun v-if="dark" :size="19" /><Moon v-else :size="19" />
           </button>
           <div ref="notificationMenu" class="relative">
-            <button :aria-label="t('admin.notifications')" :aria-expanded="notificationOpen" class="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-800" @click="notificationOpen = !notificationOpen">
-              <Bell :size="19" /><span v-if="stockAlerts.count" class="absolute -right-1 -top-1 min-w-5 rounded-full bg-error-600 px-1 text-center text-[10px] font-bold leading-5 text-white">{{stockAlerts.count>99?'99+':stockAlerts.count}}</span>
+            <button
+              :aria-label="t('admin.notifications')"
+              :aria-expanded="notificationOpen"
+              class="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-800"
+              @click="notificationOpen = !notificationOpen"
+            >
+              <Bell :size="19" /><span
+                v-if="stockAlerts.count"
+                class="absolute -right-1 -top-1 min-w-5 rounded-full bg-error-600 px-1 text-center text-[10px] font-bold leading-5 text-white"
+                >{{ stockAlerts.count > 99 ? "99+" : stockAlerts.count }}</span
+              >
             </button>
-            <div v-if="notificationOpen" class="absolute right-0 z-50 mt-3 w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white p-4 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900">
-              <div class="border-b border-gray-100 pb-3 dark:border-gray-800"><h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t("admin.notifications") }}</h2></div>
-              <div v-if="stockAlerts.alerts.length" class="divide-y"><RouterLink v-for="alert in stockAlerts.alerts" :key="alert.id" to="/admin/inventory" class="block py-3 text-sm" @click="notificationOpen=false"><strong>{{alert.name}}</strong><p class="text-xs text-gray-500">{{t('stock.alert_line',{stock:alert.current_stock,count:alert.recommended_quantity})}}</p></RouterLink><RouterLink to="/admin/inventory" class="mt-2 block text-center text-sm font-semibold text-brand-600" @click="notificationOpen=false">{{t('stock.view_recommendations')}}</RouterLink></div><div v-else class="py-8 text-center"><Bell :size="24" class="mx-auto text-gray-400" /><p class="mt-3 text-sm text-gray-500">{{ t("admin.no_notifications") }}</p></div>
+            <div
+              v-if="notificationOpen"
+              class="absolute right-0 z-50 mt-3 w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white p-4 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900"
+            >
+              <div class="border-b border-gray-100 pb-3 dark:border-gray-800">
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  {{ t("admin.notifications") }}
+                </h2>
+              </div>
+              <div v-if="stockAlerts.alerts.length" class="divide-y">
+                <RouterLink
+                  v-for="alert in stockAlerts.alerts"
+                  :key="alert.id"
+                  to="/admin/inventory"
+                  class="block py-3 text-sm"
+                  @click="notificationOpen = false"
+                  ><strong>{{ alert.name }}</strong>
+                  <p class="text-xs text-gray-500">
+                    {{
+                      t("stock.alert_line", {
+                        stock: alert.current_stock,
+                        count: alert.recommended_quantity,
+                      })
+                    }}
+                  </p></RouterLink
+                ><RouterLink
+                  to="/admin/inventory"
+                  class="mt-2 block text-center text-sm font-semibold text-brand-600"
+                  @click="notificationOpen = false"
+                  >{{ t("stock.view_recommendations") }}</RouterLink
+                >
+              </div>
+              <div v-else class="py-8 text-center">
+                <Bell :size="24" class="mx-auto text-gray-400" />
+                <p class="mt-3 text-sm text-gray-500">
+                  {{ t("admin.no_notifications") }}
+                </p>
+              </div>
             </div>
           </div>
           <LanguageSwitcher />
@@ -375,12 +568,21 @@ async function signOut() {
               class="flex items-center gap-3"
               @click="profileOpen = !profileOpen"
             >
-              <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-brand-100 font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400"><img v-if="user?.avatar_url" :src="user.avatar_url" :alt="t('profile.avatar_alt')" class="h-full w-full object-cover" /><span v-else>{{ profileInitial }}</span></span>
+              <span
+                class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-brand-100 font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400"
+                ><img
+                  v-if="user?.avatar_url"
+                  :src="user.avatar_url"
+                  :alt="t('profile.avatar_alt')"
+                  class="h-full w-full object-cover"
+                /><span v-else>{{ profileInitial }}</span></span
+              >
               <span class="hidden text-left md:block"
                 ><strong
                   class="block max-w-[8ch] truncate text-sm text-gray-700 dark:text-gray-200"
                   :title="accountName"
-                  >{{ accountName }}</strong></span
+                  >{{ accountName }}</strong
+                ></span
               >
               <ChevronDown :size="16" class="hidden text-gray-400 md:block" />
             </button>
@@ -397,9 +599,17 @@ async function signOut() {
                 <p class="mt-1 truncate text-xs text-gray-500">
                   {{ user?.email_address }}
                 </p>
-                <p class="mt-1 text-xs capitalize text-gray-400">{{ user?.role }}</p>
+                <p class="mt-1 text-xs capitalize text-gray-400">
+                  {{ user?.role }}
+                </p>
               </div>
-              <RouterLink v-if="permissions.includes('profile.view')" to="/profile" class="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800" @click="profileOpen = false"><UserRound :size="18" />{{ t("profile.menu") }}</RouterLink>
+              <RouterLink
+                v-if="permissions.includes('profile.view')"
+                to="/profile"
+                class="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                @click="profileOpen = false"
+                ><UserRound :size="18" />{{ t("profile.menu") }}</RouterLink
+              >
               <AsyncButton
                 :loading="logoutLoading"
                 :loading-text="t('admin.signing_out')"

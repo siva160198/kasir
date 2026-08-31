@@ -1,7 +1,209 @@
 <script setup>
-import {computed,onMounted,reactive,ref} from "vue";import {Download,Printer,TrendingUp} from "@lucide/vue";import AdminLayout from "../components/admin/AdminLayout.vue";import AsyncButton from "../components/AsyncButton.vue";import SelectInput from "../components/SelectInput.vue";import TextInput from "../components/TextInput.vue";import {apiFetch} from "../services/api";import {toast} from "../services/toast";import {t} from "../services/i18n";
-const loading=ref(true),report=ref(null);const today=new Date(),monthAgo=new Date(Date.now()-29*86400000);const iso=d=>d.toISOString().slice(0,10);const filters=reactive({from:iso(monthAgo),to:iso(today),user_id:""});const money=v=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(v||0);const maxDaily=computed(()=>Math.max(1,...(report.value?.daily||[]).map(x=>x.net_sales)));
-async function load(){loading.value=true;try{const q=new URLSearchParams(filters);if(!filters.user_id)q.delete("user_id");report.value=await apiFetch(`/api/v1/admin/report?${q}`)}catch(e){toast.error(e.message)}finally{loading.value=false}}function exportCsv(){const q=new URLSearchParams(filters);if(!filters.user_id)q.delete("user_id");window.location.assign(`/api/v1/admin/report/export?${q}`)}const paymentLabel=k=>k==="cash"?t("payment.cash"):k==="debit_card"?t("payment.debit_card"):k==="transfer"?t("payment.transfer"):"QRIS";onMounted(load);
+import { computed, onMounted, reactive, ref } from "vue";
+import { Download, Printer, TrendingUp } from "@lucide/vue";
+import AdminLayout from "../components/admin/AdminLayout.vue";
+import AsyncButton from "../components/AsyncButton.vue";
+import SelectInput from "../components/SelectInput.vue";
+import TextInput from "../components/TextInput.vue";
+import { apiFetch } from "../services/api";
+import { toast } from "../services/toast";
+import { t } from "../services/i18n";
+const loading = ref(true),
+  report = ref(null);
+const today = new Date(),
+  monthAgo = new Date(Date.now() - 29 * 86400000);
+const iso = (d) => d.toISOString().slice(0, 10);
+const filters = reactive({ from: iso(monthAgo), to: iso(today), user_id: "" });
+const money = (v) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(v || 0);
+const maxDaily = computed(() =>
+  Math.max(1, ...(report.value?.daily || []).map((x) => x.net_sales)),
+);
+async function load() {
+  loading.value = true;
+  try {
+    const q = new URLSearchParams(filters);
+    if (!filters.user_id) q.delete("user_id");
+    report.value = await apiFetch(`/api/v1/admin/report?${q}`);
+  } catch (e) {
+    toast.error(e.message);
+  } finally {
+    loading.value = false;
+  }
+}
+function exportCsv() {
+  const q = new URLSearchParams(filters);
+  if (!filters.user_id) q.delete("user_id");
+  window.location.assign(`/api/v1/admin/report/export?${q}`);
+}
+const paymentLabel = (k) =>
+  k === "cash"
+    ? t("payment.cash")
+    : k === "debit_card"
+      ? t("payment.debit_card")
+      : k === "transfer"
+        ? t("payment.transfer")
+        : "QRIS";
+onMounted(load);
 </script>
-<template><AdminLayout><div class="report-page mx-auto max-w-[1536px]"><div class="flex flex-wrap items-start justify-between gap-4"><div><h1 class="text-2xl font-semibold dark:text-white">{{t('report.title')}}</h1><p class="text-sm text-gray-500">{{t('report.subtitle')}}</p></div><div class="flex gap-2 print:hidden"><AsyncButton class="rounded-lg border px-4 py-2" @click="exportCsv"><Download :size="17"/>CSV</AsyncButton><AsyncButton class="rounded-lg bg-brand-500 px-4 py-2 text-white" @click="window.print()"><Printer :size="17"/>{{t('report.print')}}</AsyncButton></div></div><form class="mt-5 grid gap-3 rounded-xl border bg-white p-4 print:hidden dark:bg-gray-900 sm:grid-cols-4" @submit.prevent="load"><TextInput v-model="filters.from" type="date"/><TextInput v-model="filters.to" type="date"/><SelectInput v-model="filters.user_id"><option value="">{{t('report.all_cashiers')}}</option><option v-for="u in report?.cashiers||[]" :key="u.id" :value="u.id">{{u.email}}</option></SelectInput><AsyncButton type="submit" :loading="loading" class="rounded-lg bg-brand-500 px-4 py-2 text-white">{{t('report.apply')}}</AsyncButton></form><div v-if="loading&&!report" class="py-20 text-center">{{t('common.loading_data')}}</div><template v-else-if="report"><div class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-7"><div v-for="card in [[t('report.gross'),report.summary.gross_sales],[t('report.refunds'),-report.summary.refunds],[t('report.net'),report.summary.net_sales],[t('report.cost'),report.summary.cost],[t('report.profit'),report.summary.gross_profit],[t('report.transactions'),report.summary.transactions],[t('report.average'),report.summary.average_transaction]]" :key="card[0]" class="rounded-xl border bg-white p-4 dark:bg-gray-900"><small class="text-gray-500">{{card[0]}}</small><p class="mt-1 text-lg font-bold" :class="card[1]<0?'text-error-600':''">{{card[0]===t('report.transactions')?card[1]:money(card[1])}}</p></div></div><section class="mt-5 rounded-2xl border bg-white p-5 dark:bg-gray-900"><h2 class="font-semibold"><TrendingUp class="mr-2 inline" :size="18"/>{{t('report.daily')}}</h2><div class="mt-5 flex h-52 items-end gap-1 overflow-x-auto border-b pb-1"><div v-for="day in report.daily" :key="day.date" class="group flex h-full min-w-6 flex-1 items-end"><div class="relative w-full rounded-t bg-brand-500 hover:bg-brand-600" :style="{height:`${Math.max(2,day.net_sales/maxDaily*100)}%`}" :title="`${day.date}: ${money(day.net_sales)}`"><span class="absolute bottom-full left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white group-hover:block">{{money(day.net_sales)}}</span></div></div></div></section><div class="mt-5 grid gap-5 lg:grid-cols-2"><section class="rounded-2xl border bg-white p-5 dark:bg-gray-900"><h2 class="font-semibold">{{t('report.top_products')}}</h2><div class="mt-3 divide-y"><div v-for="p in report.products" :key="p.name" class="grid grid-cols-[1fr_auto_auto] gap-4 py-3 text-sm"><span>{{p.name}} <small class="text-gray-500">× {{p.quantity}}</small></span><span>{{money(p.net_sales)}}</span><b class="text-success-600">{{money(p.profit)}}</b></div></div></section><section class="rounded-2xl border bg-white p-5 dark:bg-gray-900"><h2 class="font-semibold">{{t('report.payment_breakdown')}}</h2><div class="mt-3 divide-y"><div v-for="(amount,key) in report.payments" :key="key" class="flex justify-between py-3"><span>{{paymentLabel(key)}}</span><b>{{money(amount)}}</b></div></div><div class="mt-4 grid grid-cols-2 gap-3 border-t pt-4"><div><small class="text-gray-500">{{t('cash.in')}}</small><p class="font-bold text-success-600">{{money(report.cash.cash_in)}}</p></div><div><small class="text-gray-500">{{t('cash.out')}}</small><p class="font-bold text-error-600">{{money(report.cash.cash_out)}}</p></div></div></section></div></template></div></AdminLayout></template>
-<style>@media print{.report-page{max-width:none!important}.report-page section,.report-page>div{break-inside:avoid}}</style>
+<template>
+  <AdminLayout
+    ><div class="report-page mx-auto max-w-[1536px]">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold dark:text-white">
+            {{ t("report.title") }}
+          </h1>
+          <p class="text-sm text-gray-500">{{ t("report.subtitle") }}</p>
+        </div>
+        <div class="flex gap-2 print:hidden">
+          <AsyncButton class="rounded-lg border px-4 py-2" @click="exportCsv"
+            ><Download :size="17" />CSV</AsyncButton
+          ><AsyncButton
+            class="rounded-lg bg-brand-500 px-4 py-2 text-white"
+            @click="window.print()"
+            ><Printer :size="17" />{{ t("report.print") }}</AsyncButton
+          >
+        </div>
+      </div>
+      <form
+        class="mt-5 grid gap-3 rounded-xl border bg-white p-4 print:hidden dark:bg-gray-900 sm:grid-cols-4"
+        @submit.prevent="load"
+      >
+        <TextInput v-model="filters.from" type="date" /><TextInput
+          v-model="filters.to"
+          type="date"
+        /><SelectInput v-model="filters.user_id"
+          ><option value="">{{ t("report.all_cashiers") }}</option>
+          <option v-for="u in report?.cashiers || []" :key="u.id" :value="u.id">
+            {{ u.email }}
+          </option></SelectInput
+        ><AsyncButton
+          type="submit"
+          :loading="loading"
+          class="rounded-lg bg-brand-500 px-4 py-2 text-white"
+          >{{ t("report.apply") }}</AsyncButton
+        >
+      </form>
+      <div v-if="loading && !report" class="py-20 text-center">
+        {{ t("common.loading_data") }}
+      </div>
+      <template v-else-if="report"
+        ><div class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-9">
+          <div
+            v-for="card in [
+              [t('report.gross'), report.summary.gross_sales],
+              [t('report.refunds'), -report.summary.refunds],
+              [t('report.net'), report.summary.net_sales],
+              [t('report.cost'), report.summary.cost],
+              [t('report.profit'), report.summary.gross_profit],
+              [t('report.expenses'), -report.summary.expenses],
+              [t('report.net_profit'), report.summary.net_profit],
+              [t('report.transactions'), report.summary.transactions],
+              [t('report.average'), report.summary.average_transaction],
+            ]"
+            :key="card[0]"
+            class="rounded-xl border bg-white p-4 dark:bg-gray-900"
+          >
+            <small class="text-gray-500">{{ card[0] }}</small>
+            <p
+              class="mt-1 text-lg font-bold"
+              :class="card[1] < 0 ? 'text-error-600' : ''"
+            >
+              {{
+                card[0] === t("report.transactions") ? card[1] : money(card[1])
+              }}
+            </p>
+          </div>
+        </div>
+        <section class="mt-5 rounded-2xl border bg-white p-5 dark:bg-gray-900">
+          <h2 class="font-semibold">
+            <TrendingUp class="mr-2 inline" :size="18" />{{ t("report.daily") }}
+          </h2>
+          <div
+            class="mt-5 flex h-52 items-end gap-1 overflow-x-auto border-b pb-1"
+          >
+            <div
+              v-for="day in report.daily"
+              :key="day.date"
+              class="group flex h-full min-w-6 flex-1 items-end"
+            >
+              <div
+                class="relative w-full rounded-t bg-brand-500 hover:bg-brand-600"
+                :style="{
+                  height: `${Math.max(2, (day.net_sales / maxDaily) * 100)}%`,
+                }"
+                :title="`${day.date}: ${money(day.net_sales)}`"
+              >
+                <span
+                  class="absolute bottom-full left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white group-hover:block"
+                  >{{ money(day.net_sales) }}</span
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="mt-5 grid gap-5 lg:grid-cols-2">
+          <section class="rounded-2xl border bg-white p-5 dark:bg-gray-900">
+            <h2 class="font-semibold">{{ t("report.top_products") }}</h2>
+            <div class="mt-3 divide-y">
+              <div
+                v-for="p in report.products"
+                :key="p.name"
+                class="grid grid-cols-[1fr_auto_auto] gap-4 py-3 text-sm"
+              >
+                <span
+                  >{{ p.name }}
+                  <small class="text-gray-500">× {{ p.quantity }}</small></span
+                ><span>{{ money(p.net_sales) }}</span
+                ><b class="text-success-600">{{ money(p.profit) }}</b>
+              </div>
+            </div>
+          </section>
+          <section class="rounded-2xl border bg-white p-5 dark:bg-gray-900">
+            <h2 class="font-semibold">{{ t("report.payment_breakdown") }}</h2>
+            <div class="mt-3 divide-y">
+              <div
+                v-for="(amount, key) in report.payments"
+                :key="key"
+                class="flex justify-between py-3"
+              >
+                <span>{{ paymentLabel(key) }}</span
+                ><b>{{ money(amount) }}</b>
+              </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-3 border-t pt-4">
+              <div>
+                <small class="text-gray-500">{{ t("cash.in") }}</small>
+                <p class="font-bold text-success-600">
+                  {{ money(report.cash.cash_in) }}
+                </p>
+              </div>
+              <div>
+                <small class="text-gray-500">{{ t("cash.out") }}</small>
+                <p class="font-bold text-error-600">
+                  {{ money(report.cash.cash_out) }}
+                </p>
+              </div>
+            </div>
+          </section>
+        </div></template
+      >
+    </div></AdminLayout
+  >
+</template>
+<style>
+@media print {
+  .report-page {
+    max-width: none !important;
+  }
+  .report-page section,
+  .report-page > div {
+    break-inside: avoid;
+  }
+}
+</style>

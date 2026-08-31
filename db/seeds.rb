@@ -49,6 +49,10 @@ permissions = {
   "reports.view" => [ "Lihat laporan", "Melihat dan mengekspor laporan penjualan dan laba." ],
   "suppliers.view" => [ "Lihat supplier", "Melihat data supplier." ], "suppliers.create" => [ "Buat supplier", "Menambah supplier." ], "suppliers.update" => [ "Ubah supplier", "Mengubah data supplier." ], "suppliers.delete" => [ "Hapus supplier", "Menghapus supplier yang belum digunakan." ],
   "purchases.view" => [ "Lihat pembelian", "Melihat pesanan pembelian." ], "purchases.create" => [ "Buat pembelian", "Membuat pesanan pembelian." ], "purchases.update" => [ "Kelola pembelian", "Mengubah, menerima, dan membatalkan pembelian." ],
+  "expenses.view" => [ "Lihat pengeluaran", "Melihat pengeluaran operasional." ], "expenses.create" => [ "Buat pengeluaran", "Mencatat pengeluaran operasional." ], "expenses.update" => [ "Ubah pengeluaran", "Mengubah pengeluaran operasional." ], "expenses.delete" => [ "Hapus pengeluaran", "Menghapus pengeluaran operasional." ],
+  "stock_counts.view" => [ "Lihat stock opname", "Melihat sesi dan hasil stock opname." ], "stock_counts.create" => [ "Buat stock opname", "Membuat sesi stock opname." ], "stock_counts.update" => [ "Hitung stock opname", "Mengisi dan finalisasi stock opname." ],
+  "customers.view" => [ "Lihat pelanggan", "Melihat pelanggan dan riwayat belanja." ], "customers.create" => [ "Buat pelanggan", "Mendaftarkan pelanggan baru." ], "customers.update" => [ "Ubah pelanggan", "Mengubah informasi pelanggan." ], "customers.delete" => [ "Hapus pelanggan", "Menghapus pelanggan yang belum bertransaksi." ],
+  "promotions.view" => [ "Lihat promosi", "Melihat daftar promosi." ], "promotions.create" => [ "Buat promosi", "Membuat kode promosi." ], "promotions.update" => [ "Ubah promosi", "Mengubah kode promosi." ], "promotions.delete" => [ "Hapus promosi", "Menghapus promosi yang belum digunakan." ],
   "store_settings.manage" => [ "Kelola pengaturan toko", "Mengatur profil, pajak, printer, dan struk toko." ]
 }
 permissions.each do |key, (name, description)|
@@ -60,8 +64,8 @@ Permission.where(key: "roles.manage").destroy_all
 Role.find_by!(key: "admin").permissions = Permission.all
 self_service_permissions = Permission.where(key: %w[sessions.view sessions.delete account_security.view account_security.update profile.view profile.update])
 Role.where.not(key: "admin").find_each { |role| role.permissions |= self_service_permissions }
-Role.find_by!(key: "manager").permissions |= Permission.where(key: %w[dashboard.view categories.view products.view inventory.view stock_movements.view cashier_shifts.view_own cashier_shifts.manage_own cashier_shifts.view_all sales.view_own sales.view_all sales.refund_create sales.refund_review reports.view suppliers.view suppliers.create suppliers.update suppliers.delete purchases.view purchases.create purchases.update store_settings.manage])
-Role.find_by!(key: "cashier").permissions |= Permission.where(key: %w[dashboard.view cashier_shifts.view_own cashier_shifts.manage_own sales.create sales.view_own sales.refund_create])
+Role.find_by!(key: "manager").permissions |= Permission.where(key: %w[dashboard.view categories.view products.view inventory.view stock_movements.view stock_counts.view stock_counts.create stock_counts.update cashier_shifts.view_own cashier_shifts.manage_own cashier_shifts.view_all sales.view_own sales.view_all sales.refund_create sales.refund_review reports.view suppliers.view suppliers.create suppliers.update suppliers.delete purchases.view purchases.create purchases.update expenses.view expenses.create expenses.update expenses.delete customers.view customers.create customers.update customers.delete promotions.view promotions.create promotions.update promotions.delete store_settings.manage])
+Role.find_by!(key: "cashier").permissions |= Permission.where(key: %w[dashboard.view cashier_shifts.view_own cashier_shifts.manage_own sales.create sales.view_own sales.refund_create customers.view customers.create])
 
 if Rails.env.development?
   admin = User.find_or_initialize_by(email_address: ENV.fetch("ADMIN_EMAIL", "admin@kasir.local"))
@@ -144,13 +148,13 @@ if Rails.env.development?
     products = Product.where(sku: %w[MKN-001 MKN-002 MKN-003 MNM-001 MNM-002 MNM-003 KHR-001 KHR-002]).index_by(&:sku)
     payment_methods = %w[cash qris cash debit_card transfer qris cash]
     sale_patterns = [
-      [[ "MNM-003", 2 ], [ "MKN-002", 1 ]],
-      [[ "MKN-003", 3 ], [ "MNM-003", 1 ]],
-      [[ "MNM-001", 2 ], [ "MKN-002", 2 ]],
-      [[ "MKN-001", 1 ], [ "MNM-002", 2 ]],
-      [[ "KHR-001", 1 ], [ "KHR-002", 1 ], [ "MNM-003", 2 ]],
-      [[ "MKN-002", 3 ], [ "MNM-001", 1 ]],
-      [[ "MKN-003", 4 ], [ "MNM-002", 1 ]]
+      [ [ "MNM-003", 2 ], [ "MKN-002", 1 ] ],
+      [ [ "MKN-003", 3 ], [ "MNM-003", 1 ] ],
+      [ [ "MNM-001", 2 ], [ "MKN-002", 2 ] ],
+      [ [ "MKN-001", 1 ], [ "MNM-002", 2 ] ],
+      [ [ "KHR-001", 1 ], [ "KHR-002", 1 ], [ "MNM-003", 2 ] ],
+      [ [ "MKN-002", 3 ], [ "MNM-001", 1 ] ],
+      [ [ "MKN-003", 4 ], [ "MNM-002", 1 ] ]
     ]
 
     7.times do |day_index|
@@ -217,9 +221,135 @@ if Rails.env.development?
     )
 
     demo_stock = { "MKN-001" => 18, "MKN-002" => 7, "MKN-003" => 42, "MNM-001" => 6, "MNM-002" => 0, "MNM-003" => 55, "KHR-001" => 4, "KHR-002" => 0 }
-    demo_stock.each { |sku, quantity| products.fetch(sku).update!(current_stock: quantity) }
+  demo_stock.each { |sku, quantity| products.fetch(sku).update!(current_stock: quantity) }
   end
 
-  puts "Development catalog ready: #{Category.count} categories, #{Product.count} products"
-  puts "Development dashboard ready: #{Sale.count} sales, #{CashierShift.open.count} active shifts"
+  expense_samples = [
+    [ "EXP-DEMO-001", 5.days.ago.to_date, "utilities", "Tagihan listrik toko", 475_000, "transfer" ],
+    [ "EXP-DEMO-002", 3.days.ago.to_date, "supplies", "Kertas thermal dan alat tulis", 185_000, "cash" ],
+    [ "EXP-DEMO-003", 1.day.ago.to_date, "transport", "Biaya pengiriman barang", 120_000, "cash" ]
+  ]
+  expense_samples.each do |number, date, category, description, amount, method|
+    Expense.find_or_create_by!(expense_number: number) { |expense| expense.assign_attributes(user: admin, expense_date: date, category: category, description: description, amount: amount, payment_method: method, note: "Data contoh pengeluaran") }
+  end
+
+  unless StockCount.exists?(count_number: "SO-DEMO-001")
+    count = StockCount.create!(created_by: admin, finalized_by: admin, count_number: "SO-DEMO-001", counted_on: 2.days.ago.to_date, status: "completed", notes: "Stock opname contoh", finalized_at: 2.days.ago)
+    Product.order(:name).limit(5).each { |product| count.stock_count_items.create!(product: product, system_stock: product.current_stock, counted_stock: product.current_stock, difference: 0, unit_cost: product.cost_price) }
+  end
+
+  [ [ "CUS-DEMO-001", "Kadek Ayu", "081234567801", true, 125 ], [ "CUS-DEMO-002", "Made Wirawan", "081234567802", true, 80 ], [ "CUS-DEMO-003", "Pelanggan Umum", nil, false, 0 ] ].each do |number, name, phone, member, points|
+    Customer.find_or_create_by!(customer_number: number) { |customer| customer.assign_attributes(name: name, phone: phone, member: member, points: points, active: true) }
+  end
+  Promotion.find_or_create_by!(code: "HEMAT10") { |promotion| promotion.assign_attributes(name: "Hemat 10 Persen", discount_type: "percentage", value: 10, minimum_purchase: 50_000, maximum_discount: 25_000, starts_at: 1.month.ago, ends_at: 1.month.from_now, usage_limit: 100, active: true) }
+  Promotion.find_or_create_by!(code: "POTONG5000") { |promotion| promotion.assign_attributes(name: "Potongan Lima Ribu", discount_type: "fixed", value: 5_000, minimum_purchase: 30_000, starts_at: 1.month.ago, ends_at: 1.month.from_now, active: true) }
+
+  [
+    [ "CUS-DEMO-004", "Komang Sari", "081234567803", "komang.sari@example.com", true, 210 ],
+    [ "CUS-DEMO-005", "Nyoman Aditya", "081234567804", "nyoman.aditya@example.com", true, 45 ],
+    [ "CUS-DEMO-006", "Warung Merta", "081234567805", "warung.merta@example.com", false, 0 ]
+  ].each do |number, name, phone, email, member, points|
+    customer = Customer.find_or_initialize_by(customer_number: number)
+    customer.update!(name: name, phone: phone, email: email, member: member, points: points, active: true)
+  end
+
+  expired_promotion = Promotion.find_or_initialize_by(code: "MERDEKA15")
+  expired_promotion.update!(name: "Promo Merdeka 15 Persen", discount_type: "percentage", value: 15, minimum_purchase: 75_000, maximum_discount: 30_000, starts_at: 3.months.ago, ends_at: 2.months.ago, usage_limit: 50, usage_count: 18, active: false)
+
+  store_setting = StoreSetting.current
+  store_setting.update!(
+    store_name: "Toko Kasir Bali",
+    address: "Jl. Raya Sesetan No. 88, Denpasar, Bali",
+    phone: "0812-3456-7890",
+    email: "halo@tokokasir.local",
+    tax_id: "01.234.567.8-901.000",
+    tax_rate: 11,
+    prices_include_tax: true,
+    rounding_unit: 100,
+    receipt_header: "Belanja mudah, harga bersahabat",
+    receipt_footer: "Terima kasih. Sampai jumpa kembali!",
+    receipt_width: 58,
+    printer_name: "Thermal POS-58",
+    printer_copies: 1,
+    show_cashier: true,
+    show_sku: true,
+    show_tax: true
+  )
+
+  supplier_samples = [
+    [ "PT Sumber Pangan Bali", "Wayan Sudarma", "08113800101", "order@sumberpangan.example", "Jl. Cargo Permai No. 12, Denpasar" ],
+    [ "CV Tirta Sejahtera", "Putu Dian", "08113800102", "sales@tirtasejahtera.example", "Jl. Gatot Subroto Timur No. 45, Denpasar" ],
+    [ "UD Kebutuhan Kita", "Made Arimbawa", "08113800103", "made@kebutuhankita.example", "Jl. Raya Abianbase No. 7, Badung" ],
+    [ "Bali Fresh Supply", "Kadek Rina", "08113800104", "rina@balifresh.example", "Jl. By Pass Ngurah Rai No. 21, Sanur" ]
+  ]
+  supplier_samples.each do |name, contact_name, phone, email, address|
+    supplier = Supplier.find_or_initialize_by(name: name)
+    supplier.update!(contact_name: contact_name, phone: phone, email: email, address: address, active: true)
+  end
+
+  food_supplier = Supplier.find_by!(name: "PT Sumber Pangan Bali")
+  drink_supplier = Supplier.find_by!(name: "CV Tirta Sejahtera")
+  daily_supplier = Supplier.find_by!(name: "UD Kebutuhan Kita")
+  Product.where(sku: %w[MKN-001 MKN-002 MKN-003]).update_all(preferred_supplier_id: food_supplier.id)
+  Product.where(sku: %w[MNM-001 MNM-002 MNM-003]).update_all(preferred_supplier_id: drink_supplier.id)
+  Product.where(sku: %w[KHR-001 KHR-002]).update_all(preferred_supplier_id: daily_supplier.id)
+
+  purchase_samples = [
+    [ "PO-DEMO-001", food_supplier, 12.days.ago.to_date, "completed", "paid", [ [ "MKN-002", 30 ], [ "MKN-003", 50 ] ] ],
+    [ "PO-DEMO-002", drink_supplier, 4.days.ago.to_date, "ordered", "unpaid", [ [ "MNM-001", 24 ], [ "MNM-003", 48 ] ] ],
+    [ "PO-DEMO-003", daily_supplier, Date.current, "draft", "unpaid", [ [ "KHR-001", 15 ], [ "KHR-002", 20 ] ] ]
+  ]
+  purchase_samples.each do |number, supplier, ordered_at, status, payment_status, item_rows|
+    order = PurchaseOrder.find_or_initialize_by(order_number: number)
+    total = item_rows.sum { |sku, quantity| Product.find_by!(sku: sku).cost_price * quantity }
+    order.update!(supplier: supplier, user: admin, ordered_at: ordered_at, status: status, payment_status: payment_status, total: total, notes: "Data contoh pesanan pembelian")
+    item_rows.each do |sku, quantity|
+      product = Product.find_by!(sku: sku)
+      item = order.purchase_order_items.find_or_initialize_by(product: product)
+      received_quantity = status == "completed" ? quantity : 0
+      item.update!(quantity: quantity, received_quantity: received_quantity, unit_cost: product.cost_price, subtotal: product.cost_price * quantity)
+    end
+  end
+
+  completed_order = PurchaseOrder.find_by!(order_number: "PO-DEMO-001")
+  receipt = GoodsReceipt.find_or_initialize_by(receipt_number: "GR-DEMO-001")
+  receipt.update!(purchase_order: completed_order, user: admin, note: "Seluruh barang diterima dalam kondisi baik")
+  completed_order.purchase_order_items.each do |order_item|
+    receipt.goods_receipt_items.find_or_create_by!(purchase_order_item: order_item) { |item| item.quantity = order_item.quantity }
+  end
+
+  draft_count = StockCount.find_or_create_by!(count_number: "SO-DEMO-002") do |count|
+    count.assign_attributes(created_by: admin, counted_on: Date.current, status: "draft", notes: "Stock opname rak minuman yang sedang berjalan")
+  end
+  Product.where(sku: %w[MNM-001 MNM-002 MNM-003]).each do |product|
+    draft_count.stock_count_items.find_or_create_by!(product: product) { |item| item.assign_attributes(system_stock: product.current_stock, unit_cost: product.cost_price) }
+  end
+
+  additional_expenses = [
+    [ "EXP-DEMO-004", Date.current, "maintenance", "Servis rutin printer kasir", 250_000, "cash" ],
+    [ "EXP-DEMO-005", Date.current, "salary", "Uang makan staf mingguan", 600_000, "transfer" ],
+    [ "EXP-DEMO-006", 2.days.ago.to_date, "other", "Biaya kebersihan toko", 150_000, "debit_card" ]
+  ]
+  additional_expenses.each do |number, date, category, description, amount, method|
+    expense = Expense.find_or_initialize_by(expense_number: number)
+    expense.update!(user: admin, expense_date: date, category: category, description: description, amount: amount, payment_method: method, note: "Data contoh pengeluaran operasional")
+  end
+
+  demo_customers = Customer.where(customer_number: %w[CUS-DEMO-001 CUS-DEMO-002 CUS-DEMO-004 CUS-DEMO-005]).to_a
+  Sale.where("client_token LIKE ?", "DEMO-DASHBOARD-%").order(:completed_at).limit(16).each_with_index do |sale, index|
+    sale.update_columns(customer_id: demo_customers[index % demo_customers.length].id)
+  end
+  promotion = Promotion.find_by!(code: "HEMAT10")
+  promoted_sales = Sale.where("client_token LIKE ?", "DEMO-DASHBOARD-%").order(completed_at: :desc).limit(3)
+  promoted_sales.update_all(promotion_id: promotion.id)
+  promotion.update!(usage_count: promoted_sales.count)
+
+  unless SaleRefund.exists?(refund_number: "REF-DEMO-001")
+    refunded_sale = Sale.where("client_token LIKE ?", "DEMO-DASHBOARD-%").includes(:sale_items).order(:completed_at).first
+    refunded_item = refunded_sale.sale_items.first
+    refund = SaleRefund.create!(sale: refunded_sale, cashier_shift: refunded_sale.cashier_shift, requested_by: refunded_sale.user, refund_number: "REF-DEMO-001", refund_type: "partial", status: "pending", reason: "Produk tidak sesuai pesanan", total: refunded_item.unit_price)
+    refund.sale_refund_items.create!(sale_item: refunded_item, quantity: 1, unit_price: refunded_item.unit_price, subtotal: refunded_item.unit_price)
+  end
+
+  puts "Development data ready: #{Product.count} products, #{Supplier.count} suppliers, #{PurchaseOrder.count} purchases, #{Customer.count} customers, #{Sale.count} sales"
 end

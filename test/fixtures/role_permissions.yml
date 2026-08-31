@@ -83,6 +83,21 @@ admin_purchases_view: { role: admin, permission: purchases_view }
 admin_purchases_create: { role: admin, permission: purchases_create }
 admin_purchases_update: { role: admin, permission: purchases_update }
 admin_store_settings_manage: { role: admin, permission: store_settings_manage }
+admin_expenses_view: { role: admin, permission: expenses_view }
+admin_expenses_create: { role: admin, permission: expenses_create }
+admin_expenses_update: { role: admin, permission: expenses_update }
+admin_expenses_delete: { role: admin, permission: expenses_delete }
+admin_stock_counts_view: { role: admin, permission: stock_counts_view }
+admin_stock_counts_create: { role: admin, permission: stock_counts_create }
+admin_stock_counts_update: { role: admin, permission: stock_counts_update }
+admin_customers_view: { role: admin, permission: customers_view }
+admin_customers_create: { role: admin, permission: customers_create }
+admin_customers_update: { role: admin, permission: customers_update }
+admin_customers_delete: { role: admin, permission: customers_delete }
+admin_promotions_view: { role: admin, permission: promotions_view }
+admin_promotions_create: { role: admin, permission: promotions_create }
+admin_promotions_update: { role: admin, permission: promotions_update }
+admin_promotions_delete: { role: admin, permission: promotions_delete }
 member_sessions_view:
   role: member
   permission: sessions_view

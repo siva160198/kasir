@@ -29,7 +29,7 @@ class Api::V1::Admin::StoreSettingsControllerTest < ActionDispatch::IntegrationT
   test "checkout applies configured tax and rounding" do
     StoreSetting.current.update!(tax_rate: 11, prices_include_tax: false, rounding_unit: 500)
     product = products(:coffee); product.update!(current_stock: 5)
-    CashierShift.create!(user: users(:one), shift_number: "SFT-TAX", opened_at: Time.current, opening_cash: 0)
+    CashierShift.create!(user: users(:one), shift_number: "SFT-TAX", opened_at: Time.current, opening_cash: 0, pos_verified_at: Time.current, pos_verified_session_id: users(:one).sessions.order(:id).last.id)
     post api_v1_admin_sales_url, params: { client_token: SecureRandom.uuid, received_amount: 20_000, items: [ { product_id: product.id, quantity: 1 } ] }, as: :json
     assert_response :created
     assert_equal 1_650, response.parsed_body.dig("sale", "tax_amount")

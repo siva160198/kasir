@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -110,10 +110,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
     t.datetime "opened_at", null: false
     t.bigint "opening_cash", default: 0, null: false
     t.text "opening_note"
+    t.datetime "pos_verified_at"
+    t.bigint "pos_verified_session_id"
     t.string "shift_number", null: false
     t.string "status", default: "open", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["pos_verified_session_id"], name: "index_cashier_shifts_on_pos_verified_session_id"
     t.index ["shift_number"], name: "index_cashier_shifts_on_shift_number", unique: true
     t.index ["user_id"], name: "index_cashier_shifts_on_user_id"
     t.index ["user_id"], name: "index_one_open_shift_per_user", unique: true, where: "((status)::text = 'open'::text)"
@@ -128,6 +131,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
     t.index "lower((name)::text)", name: "index_categories_on_lower_name", unique: true
   end
 
+  create_table "customers", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.text "address"
+    t.datetime "created_at", null: false
+    t.string "customer_number", null: false
+    t.string "email"
+    t.boolean "member", default: false, null: false
+    t.string "name", null: false
+    t.string "phone"
+    t.integer "points", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_number"], name: "index_customers_on_customer_number", unique: true
+    t.index ["phone"], name: "index_customers_on_phone", unique: true, where: "(phone IS NOT NULL)"
+  end
+
   create_table "email_change_challenges", force: :cascade do |t|
     t.integer "attempts_count", default: 0, null: false
     t.string "code_digest", null: false
@@ -139,6 +157,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
     t.bigint "user_id", null: false
     t.index ["expires_at"], name: "index_email_change_challenges_on_expires_at"
     t.index ["user_id"], name: "index_email_change_challenges_on_user_id"
+  end
+
+  create_table "expenses", force: :cascade do |t|
+    t.bigint "amount", null: false
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.string "description", null: false
+    t.date "expense_date", null: false
+    t.string "expense_number", null: false
+    t.text "note"
+    t.string "payment_method", default: "cash", null: false
+    t.string "reference_number"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["expense_date"], name: "index_expenses_on_expense_date"
+    t.index ["expense_number"], name: "index_expenses_on_expense_number", unique: true
+    t.index ["user_id"], name: "index_expenses_on_user_id"
   end
 
   create_table "goods_receipt_items", force: :cascade do |t|
@@ -241,6 +276,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
   end
 
+  create_table "promotions", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "discount_type", null: false
+    t.datetime "ends_at", null: false
+    t.bigint "maximum_discount"
+    t.bigint "minimum_purchase", default: 0, null: false
+    t.string "name", null: false
+    t.datetime "starts_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "usage_count", default: 0, null: false
+    t.integer "usage_limit"
+    t.integer "value", null: false
+    t.index ["code"], name: "index_promotions_on_code", unique: true
+  end
+
   create_table "purchase_order_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "product_id", null: false
@@ -296,6 +348,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
   create_table "sale_items", force: :cascade do |t|
     t.bigint "cost_price", null: false
     t.datetime "created_at", null: false
+    t.bigint "discount", default: 0, null: false
     t.bigint "product_id", null: false
     t.string "product_name", null: false
     t.integer "quantity", null: false
@@ -347,8 +400,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
     t.string "client_token", null: false
     t.datetime "completed_at", null: false
     t.datetime "created_at", null: false
+    t.bigint "customer_id"
     t.bigint "discount", default: 0, null: false
     t.text "notes"
+    t.bigint "promotion_id"
     t.bigint "rounding_amount", default: 0, null: false
     t.string "sale_number", null: false
     t.string "status", default: "completed", null: false
@@ -359,6 +414,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
     t.bigint "user_id", null: false
     t.index ["cashier_shift_id"], name: "index_sales_on_cashier_shift_id"
     t.index ["client_token"], name: "index_sales_on_client_token", unique: true
+    t.index ["customer_id"], name: "index_sales_on_customer_id"
+    t.index ["promotion_id"], name: "index_sales_on_promotion_id"
     t.index ["sale_number"], name: "index_sales_on_sale_number", unique: true
     t.index ["user_id"], name: "index_sales_on_user_id"
   end
@@ -399,6 +456,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
     t.bigint "user_id", null: false
     t.index ["expires_at"], name: "index_step_up_grants_on_expires_at"
     t.index ["user_id"], name: "index_step_up_grants_on_user_id"
+  end
+
+  create_table "stock_count_items", force: :cascade do |t|
+    t.integer "counted_stock"
+    t.datetime "created_at", null: false
+    t.integer "difference"
+    t.bigint "product_id", null: false
+    t.bigint "stock_count_id", null: false
+    t.integer "system_stock", null: false
+    t.bigint "unit_cost", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_stock_count_items_on_product_id"
+    t.index ["stock_count_id", "product_id"], name: "index_stock_count_items_on_stock_count_id_and_product_id", unique: true
+    t.index ["stock_count_id"], name: "index_stock_count_items_on_stock_count_id"
+  end
+
+  create_table "stock_counts", force: :cascade do |t|
+    t.string "count_number", null: false
+    t.date "counted_on", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.datetime "finalized_at"
+    t.bigint "finalized_by_id"
+    t.text "notes"
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["count_number"], name: "index_stock_counts_on_count_number", unique: true
+    t.index ["created_by_id"], name: "index_stock_counts_on_created_by_id"
+    t.index ["finalized_by_id"], name: "index_stock_counts_on_finalized_by_id"
   end
 
   create_table "stock_movements", force: :cascade do |t|
@@ -505,6 +591,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
   add_foreign_key "cash_movements", "users"
   add_foreign_key "cashier_shifts", "users"
   add_foreign_key "email_change_challenges", "users"
+  add_foreign_key "expenses", "users"
   add_foreign_key "goods_receipt_items", "goods_receipts"
   add_foreign_key "goods_receipt_items", "purchase_order_items"
   add_foreign_key "goods_receipts", "purchase_orders"
@@ -529,10 +616,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_111000) do
   add_foreign_key "sale_refunds", "users", column: "requested_by_id"
   add_foreign_key "sale_refunds", "users", column: "reviewed_by_id"
   add_foreign_key "sales", "cashier_shifts"
+  add_foreign_key "sales", "customers"
+  add_foreign_key "sales", "promotions"
   add_foreign_key "sales", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "step_up_challenges", "users"
   add_foreign_key "step_up_grants", "users"
+  add_foreign_key "stock_count_items", "products"
+  add_foreign_key "stock_count_items", "stock_counts"
+  add_foreign_key "stock_counts", "users", column: "created_by_id"
+  add_foreign_key "stock_counts", "users", column: "finalized_by_id"
   add_foreign_key "stock_movements", "products"
   add_foreign_key "stock_movements", "users"
   add_foreign_key "users", "roles", column: "role", primary_key: "key"

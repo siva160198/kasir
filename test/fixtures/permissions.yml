@@ -102,3 +102,18 @@ purchases_view: { key: purchases.view, name: Lihat pembelian }
 purchases_create: { key: purchases.create, name: Buat pembelian }
 purchases_update: { key: purchases.update, name: Kelola pembelian }
 store_settings_manage: { key: store_settings.manage, name: Kelola pengaturan toko }
+expenses_view: { key: expenses.view, name: Lihat pengeluaran }
+expenses_create: { key: expenses.create, name: Buat pengeluaran }
+expenses_update: { key: expenses.update, name: Ubah pengeluaran }
+expenses_delete: { key: expenses.delete, name: Hapus pengeluaran }
+stock_counts_view: { key: stock_counts.view, name: Lihat stock opname }
+stock_counts_create: { key: stock_counts.create, name: Buat stock opname }
+stock_counts_update: { key: stock_counts.update, name: Hitung stock opname }
+customers_view: { key: customers.view, name: Lihat pelanggan }
+customers_create: { key: customers.create, name: Buat pelanggan }
+customers_update: { key: customers.update, name: Ubah pelanggan }
+customers_delete: { key: customers.delete, name: Hapus pelanggan }
+promotions_view: { key: promotions.view, name: Lihat promosi }
+promotions_create: { key: promotions.create, name: Buat promosi }
+promotions_update: { key: promotions.update, name: Ubah promosi }
+promotions_delete: { key: promotions.delete, name: Hapus promosi }

@@ -4,6 +4,7 @@ class Product < ApplicationRecord
   belongs_to :preferred_supplier, class_name: "Supplier", optional: true
   has_many :stock_movements, dependent: :restrict_with_error
   has_many :purchase_order_items, dependent: :restrict_with_error
+  has_many :stock_count_items, dependent: :restrict_with_error
 
   normalizes :name, with: ->(value) { value.strip.gsub(/\s+/, " ") }
   normalizes :sku, with: ->(value) { value.strip.upcase }

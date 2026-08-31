@@ -70,16 +70,67 @@ describe("AdminLayout", () => {
   it("orders navigation by the store workflow", () => {
     useAuth().setUser({
       email_address: "admin@example.com",
-      permissions: ["dashboard.view", "users.view", "categories.view", "products.view", "inventory.view", "cashier_shifts.view_own", "sales.create", "sales.view_own"],
+      permissions: [
+        "dashboard.view",
+        "users.view",
+        "categories.view",
+        "products.view",
+        "inventory.view",
+        "cashier_shifts.view_own",
+        "sales.create",
+        "sales.view_own",
+        "store_settings.manage",
+        "expenses.view",
+        "stock_counts.view",
+        "customers.view",
+        "promotions.view",
+        "purchases.view",
+        "suppliers.view",
+        "reports.view",
+      ],
     });
 
     const sidebarText = mountLayout().get("aside").text();
 
-    expect(sidebarText.indexOf("Dasbor")).toBeLessThan(sidebarText.indexOf("Shift Kasir"));
-    expect(sidebarText.indexOf("Shift Kasir")).toBeLessThan(sidebarText.indexOf("Transaksi"));
-    expect(sidebarText.indexOf("Transaksi")).toBeLessThan(sidebarText.indexOf("Produk"));
-    expect(sidebarText.indexOf("Produk")).toBeLessThan(sidebarText.indexOf("Stok"));
-    expect(sidebarText.indexOf("Stok")).toBeLessThan(sidebarText.indexOf("Manajemen Pengguna"));
+    expect(sidebarText.indexOf("Dasbor")).toBeLessThan(
+      sidebarText.indexOf("Shift Kasir"),
+    );
+    expect(sidebarText.indexOf("Shift Kasir")).toBeLessThan(
+      sidebarText.indexOf("Transaksi"),
+    );
+    expect(sidebarText.indexOf("Transaksi")).toBeLessThan(
+      sidebarText.indexOf("Produk"),
+    );
+    expect(sidebarText.indexOf("Produk")).toBeLessThan(
+      sidebarText.indexOf("Stok"),
+    );
+    expect(sidebarText.indexOf("Stok")).toBeLessThan(
+      sidebarText.indexOf("Stock Opname"),
+    );
+    expect(sidebarText.indexOf("Stock Opname")).toBeLessThan(
+      sidebarText.indexOf("Pembelian"),
+    );
+    expect(sidebarText.indexOf("Pembelian")).toBeLessThan(
+      sidebarText.indexOf("Supplier"),
+    );
+    expect(sidebarText.indexOf("Supplier")).toBeLessThan(
+      sidebarText.indexOf("Pelanggan"),
+    );
+    expect(sidebarText.indexOf("Pelanggan")).toBeLessThan(
+      sidebarText.indexOf("Promosi"),
+    );
+    expect(sidebarText.indexOf("Promosi")).toBeLessThan(
+      sidebarText.indexOf("Pengeluaran"),
+    );
+    expect(sidebarText.indexOf("Pengeluaran")).toBeLessThan(
+      sidebarText.indexOf("Laporan"),
+    );
+    expect(sidebarText.indexOf("Laporan")).toBeLessThan(
+      sidebarText.indexOf("Manajemen Pengguna"),
+    );
+    expect(sidebarText.indexOf("Manajemen Pengguna")).toBeLessThan(
+      sidebarText.indexOf("Pengaturan Toko"),
+    );
   });
 
   it("shows the profile link above sign out in the account dropdown", async () => {
@@ -88,7 +139,9 @@ describe("AdminLayout", () => {
 
     const dropdownText = wrapper.text();
     expect(dropdownText.indexOf("Profil")).toBeGreaterThan(-1);
-    expect(dropdownText.indexOf("Profil")).toBeLessThan(dropdownText.indexOf("Keluar"));
+    expect(dropdownText.indexOf("Profil")).toBeLessThan(
+      dropdownText.indexOf("Keluar"),
+    );
 
     document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
     await nextTick();
@@ -106,12 +159,19 @@ describe("AdminLayout", () => {
   });
 
   it("shows only a visually truncated name before the account menu opens", () => {
-    useAuth().setUser({ first_name: "Alexander", last_name: "Hamilton", email_address: "alex@example.com", permissions: ["dashboard.view", "profile.view"] });
+    useAuth().setUser({
+      first_name: "Alexander",
+      last_name: "Hamilton",
+      email_address: "alex@example.com",
+      permissions: ["dashboard.view", "profile.view"],
+    });
     const wrapper = mountLayout();
     const label = wrapper.get('[aria-label="Menu akun"] strong');
 
     expect(label.text()).toBe("Alexander Hamilton");
     expect(label.classes()).toContain("max-w-[8ch]");
-    expect(wrapper.get('[aria-label="Menu akun"]').text()).not.toContain("alex@example.com");
+    expect(wrapper.get('[aria-label="Menu akun"]').text()).not.toContain(
+      "alex@example.com",
+    );
   });
 });
